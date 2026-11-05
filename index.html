@@ -74,6 +74,11 @@ h2{font-size:1.1rem;margin:0 0 2px;font-weight:800}
 .na{color:var(--muted);font-weight:600;font-size:.8rem}
 .note{font-size:.78rem;color:var(--muted);line-height:1.5;margin-top:14px}
 .empty{padding:14px;background:var(--panel);border-radius:12px;color:var(--muted);font-size:.9rem;line-height:1.5}
+.fc-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:10px 0;border-bottom:1px solid var(--grid);font-size:.92rem}
+.fc-row .k{color:var(--muted);font-weight:600}
+.fc-row .v{font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.fc-sub{display:block;font-size:.75rem;font-weight:600;color:var(--muted);margin-top:2px}
+.fc-list{margin:12px 0 0;padding-left:18px;font-size:.85rem;color:var(--muted);line-height:1.55}
 .live{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:700;color:var(--muted);margin-top:2px}
 .live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--muted)}
 .live.on{color:var(--up)} .live.on::before{background:var(--up)}
@@ -108,6 +113,12 @@ h2{font-size:1.1rem;margin:0 0 2px;font-weight:800}
     <div class="seg" id="ivs" aria-label="Grafik aralığı"></div>
     <div id="chart"></div>
     <div class="cmsg" id="cmsg"></div>
+  </section>
+
+  <section class="detail" id="fc" hidden>
+    <h2>Önümüzdeki 1 hafta</h2>
+    <p class="sub" id="fcsub"></p>
+    <div id="fcbody"></div>
   </section>
 
   <section class="detail" id="cmp" style="--c:var(--ink)">
@@ -148,6 +159,7 @@ function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 
 const state = { tab: lsGet("tab") || "kripto", sel: lsGet("sel") || "BTC", iv: "d1", per: lsGet("per") || "1Y", fund: lsGet("fund") };
 let DATA = {assets:{}, funds:{}};
+let FC = null;
 const $ = s => document.querySelector(s);
 
 // ---------- veri ----------
@@ -239,6 +251,7 @@ async function loadData(){
   } catch(e) {
     $("#upd").textContent = "Döviz/fon verisi henüz yok — GitHub'da iş akışını çalıştır";
   }
+  try { const r2 = await fetch("data/tahmin.json?v="+Date.now(), {cache:"no-store"}); FC = r2.ok ? await r2.json() : null; } catch(e) { FC = null; }
   groups.fon = [];
   for (const code of Object.keys(DATA.funds)){
     const id = "F:"+code;
@@ -359,6 +372,46 @@ async function drawChart(){
   const b = document.createElement("b"); b.className = cls(ch); b.textContent = fmtPct(ch); el.appendChild(b);
 }
 
+// ---------- haftalık görünüm ----------
+function fcRow(k, v, sub, c){
+  const r = document.createElement("div"); r.className = "fc-row";
+  const a = document.createElement("div"); a.className = "k"; a.textContent = k;
+  const b = document.createElement("div"); b.className = "v" + (c ? " " + c : ""); b.textContent = v;
+  if (sub){ const s = document.createElement("span"); s.className = "fc-sub"; s.textContent = sub; b.appendChild(s); }
+  r.append(a, b); return r;
+}
+async function renderForecast(){
+  const sec = $("#fc"), id = state.sel, f = FC && FC.assets && FC.assets[id];
+  if (!f){ sec.hidden = true; return; }
+  const cur = await current(id).catch(() => null);
+  if (id !== state.sel) return;
+  sec.hidden = false; sec.style.setProperty("--c", assets[id].color);
+  const d = new Date(FC.updated).toLocaleString("tr-TR", {timeZone:"Europe/Istanbul", day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"});
+  $("#fcsub").textContent = `Son hesaplama ${d}. Olasılık gösterir, kesinlik değil; yatırım tavsiyesi değildir.`;
+  const body = $("#fcbody"); body.innerHTML = "";
+  body.appendChild(fcRow("Eğilim", f.trend, "50 ve 200 günlük ortalamalar ile son 4 hafta", f.trend === "Yükselen" ? "up" : f.trend === "Düşen" ? "down" : ""));
+  if (cur){
+    const lo = cur[1]*Math.exp(-f.z*f.sig7), hi = cur[1]*Math.exp(f.z*f.sig7);
+    body.appendChild(fcRow("Olası aralık", `${fmtPrice(lo)} – ${fmtPrice(hi)}`, f.cov != null ? `%80 olasılıkla; geçmiş haftalarda tutma oranı %${Math.round(f.cov*100)}` : "%80 olasılıkla", ""));
+  }
+  let dir, sub, c = "";
+  if (f.signal){
+    const pr = f.signal === "up" ? f.p_up : 1 - f.p_up;
+    dir = (f.signal === "up" ? "Yukarı" : "Aşağı") + " %" + Math.round(pr*100);
+    sub = `Geçmiş isabet %${Math.round(f.acc*100)}; her hafta aynı yönü söylemek %${Math.round(f.base*100)} tuttururdu`;
+    c = f.signal === "up" ? "up" : "down";
+  } else {
+    dir = "Belirsiz";
+    sub = f.acc != null ? `Model geçmişte %${Math.round(f.acc*100)} isabet etti; her hafta aynı yönü söylemek %${Math.round(f.base*100)} tuttururdu, bu yüzden yön gösterilmiyor` : "Geçmiş verisi güvenilir bir ölçüm için henüz yeterli değil";
+  }
+  body.appendChild(fcRow("Yön", dir, sub, c));
+  if (f.factors && f.factors.length){
+    const ul = document.createElement("ul"); ul.className = "fc-list";
+    for (const t of f.factors){ const li = document.createElement("li"); li.textContent = t; ul.appendChild(li); }
+    body.appendChild(ul);
+  }
+}
+
 // ---------- kıyas ----------
 function compareSet(){
   const set = [state.sel];
@@ -419,7 +472,7 @@ function select(id){
   state.sel = id; lsSet("sel", id);
   if (assets[id].kind === "fund"){ state.fund = assets[id].code; lsSet("fund", state.fund); }
   document.querySelectorAll(".chip-asset").forEach(b => b.setAttribute("aria-pressed", false));
-  renderList(); renderIntervals(); renderHeader(); drawChart(); renderRace();
+  renderList(); renderIntervals(); renderHeader(); drawChart(); renderRace(); renderForecast();
 }
 function setTab(t){
   state.tab = t; lsSet("tab", t); renderTabs();
@@ -435,7 +488,7 @@ async function refreshAll(full){
   if (!assets[state.sel]) state.sel = "BTC";
   if (full) state.tab = assets[state.sel].group;
   renderTabs(); renderList(); renderIntervals(); renderPeriods();
-  await Promise.all([renderHeader(), drawChart(), renderRace()]);
+  await Promise.all([renderHeader(), drawChart(), renderRace(), renderForecast()]);
   btn.classList.remove("spin");
 }
 $("#refresh").onclick = () => refreshAll(true);
@@ -524,7 +577,7 @@ function tick(){
     try { area.update({ time: t + TR_OFFSET, value: v }); chartLast.time = t; } catch(e) {}
   }
 }
-setInterval(() => { if (!document.hidden && isLive()) renderRace(); }, 5000);
+setInterval(() => { if (!document.hidden && isLive()) { renderRace(); renderForecast(); } }, 5000);
 
 connect();
 refreshAll(true);
