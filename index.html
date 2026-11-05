@@ -74,6 +74,12 @@ h2{font-size:1.1rem;margin:0 0 2px;font-weight:800}
 .na{color:var(--muted);font-weight:600;font-size:.8rem}
 .note{font-size:.78rem;color:var(--muted);line-height:1.5;margin-top:14px}
 .empty{padding:14px;background:var(--panel);border-radius:12px;color:var(--muted);font-size:.9rem;line-height:1.5}
+.live{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:700;color:var(--muted);margin-top:2px}
+.live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.live.on{color:var(--up)} .live.on::before{background:var(--up)}
+.fl-up{animation:flu .8s ease-out} .fl-down{animation:fld .8s ease-out}
+@keyframes flu{from{color:var(--up)}} @keyframes fld{from{color:var(--down)}}
+@media (prefers-reduced-motion: reduce){.fl-up,.fl-down{animation:none}}
 </style>
 </head>
 <body>
@@ -82,6 +88,7 @@ h2{font-size:1.1rem;margin:0 0 2px;font-weight:800}
     <div>
       <h1>Yatırım Takip</h1>
       <div class="upd" id="upd">Veriler yükleniyor…</div>
+      <div class="live" id="live">Bağlanıyor…</div>
     </div>
     <button class="refresh" id="refresh" aria-label="Verileri yenile">↻</button>
   </header>
@@ -110,7 +117,7 @@ h2{font-size:1.1rem;margin:0 0 2px;font-weight:800}
     <div class="race" id="race"></div>
   </section>
 
-  <p class="note">Kripto fiyatları Binance'ten anlık gelir. Döviz, altın ve fonlar saatte bir güncellenir; TEFAS fon fiyatları günde bir kez açıklanır. Gram altın, ons altın ve dolar kurundan hesaplanır, kuyumcu fiyatından biraz farklı olabilir. Bu ekran yatırım tavsiyesi değildir.</p>
+  <p class="note">Kripto, döviz ve altın fiyatları saniyelik akar. Döviz ve altının canlı fiyatı Binance'ten hesaplanır ve her saat gerçek piyasa fiyatına göre ayarlanır; TEFAS fon fiyatları günde bir kez açıklanır. Gram altın, ons altın ve dolar kurundan hesaplanır, kuyumcu fiyatından biraz farklı olabilir. Bu ekran yatırım tavsiyesi değildir.</p>
 </div>
 
 <script>
@@ -123,6 +130,8 @@ const TR_OFFSET = 3*3600; // Türkiye UTC+3
 const INTERVALS = [["h1","1 Saat"],["h4","4 Saat"],["d1","1 Gün"],["w1","1 Hafta"]];
 const PERIODS = [["1G","1 Gün"],["1H","1 Hafta"],["1A","1 Ay"],["3A","3 Ay"],["6A","6 Ay"],["YBB","Yılbaşından"],["1Y","1 Yıl"],["5Y","5 Yıl"]];
 const CORE = ["USD","EUR","GRAM","BTC","ETH"];
+const ONS = 31.1034768;
+const WS = "wss://data-stream.binance.vision/stream?streams=" + ["btctry","ethtry","ethfitry","ethfiusdt","usdttry","eurusdt","paxgusdt"].map(s => s + "@miniTicker").join("/");
 
 const assets = {};
 const groups = {kripto:[], fon:[], doviz:[]};
@@ -182,6 +191,8 @@ async function getSeries(id, kind){
   return null;
 }
 async function current(id){
+  const lp = livePrice(id);
+  if (lp != null) return [Math.floor(Date.now()/1000), lp];
   let s = null;
   if (assets[id].kind !== "fund") s = await getSeries(id, "h1").catch(() => null);
   if (!s || !s.length) s = await getSeries(id, "d1").catch(() => null);
@@ -201,16 +212,20 @@ function priceAt(s, t){
   if (ans < 0) return (s[0][0]-t < 6*86400) ? s[0][1] : null; // yeterince eski veri yok
   return s[ans][1];
 }
-async function periodReturn(id, p){
+async function startPrice(id, p){
   const a = assets[id];
   const short = p === "1G" || p === "1H";
   let kind = (short && a.kind !== "fund") ? "h1" : (p === "5Y" && a.kind === "bn" ? "w1" : "d1");
   let s = await getSeries(id, kind).catch(() => null);
   if ((!s || s.length < 2) && kind === "h1") s = await getSeries(id, "d1").catch(() => null);
-  const cur = await current(id).catch(() => null);
-  if (!s || s.length < 2 || !cur) return null;
-  const start = priceAt(s, periodStart(p));
-  if (!start) return null;
+  if (!s || s.length < 2) return null;
+  return priceAt(s, periodStart(p));
+}
+const ref1G = {};
+async function periodReturn(id, p){
+  const [start, cur] = await Promise.all([startPrice(id, p), current(id).catch(() => null)]);
+  if (!start || !cur) return null;
+  if (p === "1G") ref1G[id] = start;
   return (cur[1]/start - 1)*100;
 }
 async function loadData(){
@@ -256,7 +271,7 @@ function renderList(){
   for (const id of ids){
     const a = assets[id];
     const b = document.createElement("button");
-    b.className = "chip-asset"; b.style.setProperty("--c", a.color);
+    b.className = "chip-asset"; b.dataset.id = id; b.style.setProperty("--c", a.color);
     b.setAttribute("aria-pressed", id === state.sel);
     b.innerHTML = `<div class="n"></div><div class="p">…</div><div class="ch">&nbsp;</div>`;
     b.querySelector(".n").textContent = a.kind === "fund" ? a.code : a.name;
@@ -274,7 +289,7 @@ async function fillChip(b, id){
 }
 
 // ---------- detay & grafik ----------
-let chart = null, area = null, chartToken = 0;
+let chart = null, area = null, chartToken = 0, chartLast = null;
 function chartColors(){
   return { text: css("--muted"), grid: css("--grid") };
 }
@@ -329,13 +344,14 @@ async function drawChart(){
   let s = null;
   try { s = await getSeries(id, kind); } catch(e) { s = null; }
   if (token !== chartToken) return;
-  if (!s || s.length < 2){ area.setData([]); $("#cmsg").textContent = "Bu aralık için veri yok."; return; }
+  if (!s || s.length < 2){ chartLast = null; area.setData([]); $("#cmsg").textContent = "Bu aralık için veri yok."; return; }
   const from = Date.now()/1000 - WINDOW[kind];
   let v = s.filter(p => p[0] >= from); if (v.length < 2) v = s;
   const ch = (v[v.length-1][1]/v[0][1] - 1)*100;
   const col = ch >= 0 ? css("--up") : css("--down");
   area.applyOptions({ lineColor: col, topColor: col + "55", bottomColor: col + "05" });
   area.setData(v.map(p => ({ time: p[0] + TR_OFFSET, value: p[1] })));
+  chartLast = { id, kind, time: v[v.length-1][0] };
   chart.applyOptions({ timeScale: { timeVisible: kind === "h1" || kind === "h4" } });
   chart.timeScale().fitContent();
   const span = {h1:"son 7 gün, saatlik", h4:"son 60 gün, 4 saatlik", d1:"son 1 yıl, günlük", w1:"son 5 yıl, haftalık"}[kind];
@@ -415,7 +431,7 @@ document.querySelectorAll(".tab").forEach(b => b.onclick = () => setTab(b.datase
 async function refreshAll(full){
   const btn = $("#refresh"); btn.classList.add("spin");
   cache.clear();
-  if (full) await loadData();
+  if (full) { await loadData(); await calibrate().catch(() => {}); }
   if (!assets[state.sel]) state.sel = "BTC";
   if (full) state.tab = assets[state.sel].group;
   renderTabs(); renderList(); renderIntervals(); renderPeriods();
@@ -428,9 +444,89 @@ setInterval(() => {
   if (document.hidden) return;
   const full = Date.now() - lastFull > 10*60*1000; if (full) lastFull = Date.now();
   refreshAll(full);
-}, 60000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) { lastFull = Date.now(); refreshAll(true); } });
+}, 300000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { lastFull = Date.now(); connect(); refreshAll(true); } });
 
+// ---------- canlı fiyat ----------
+const last = {};
+const calib = {};
+let ws = null, wsOpen = false, lastMsg = 0, retry = 0;
+function isLive(){ return wsOpen && Date.now() - lastMsg < 20000; }
+function derivedLive(id){
+  const u = last.USDTTRY; if (!u) return null;
+  if (id === "USD") return u;
+  if (id === "EUR") return last.EURUSDT ? last.EURUSDT*u : null;
+  if (id === "GRAM") return last.PAXGUSDT ? last.PAXGUSDT*u/ONS : null;
+  return null;
+}
+function livePrice(id){
+  const a = assets[id]; if (!a || !isLive()) return null;
+  if (a.kind === "bn"){
+    if (last[a.sym]) return last[a.sym];
+    if (last[a.usdt] && last.USDTTRY) return last[a.usdt]*last.USDTTRY;
+    return null;
+  }
+  if (a.kind === "json"){ const d = derivedLive(id); return (d != null && calib[id]) ? d*calib[id] : null; }
+  return null;
+}
+async function calibrate(){
+  const [u, e, p] = await Promise.all([bn("USDTTRY","h1"), bn("EURUSDT","h1"), bn("PAXGUSDT","h1")]);
+  const mu = new Map(u), me = new Map(e), mp = new Map(p);
+  const f = { USD: t => mu.get(t), EUR: t => (me.has(t) && mu.has(t)) ? me.get(t)*mu.get(t) : null, GRAM: t => (mp.has(t) && mu.has(t)) ? mp.get(t)*mu.get(t)/ONS : null };
+  for (const id of ["USD","EUR","GRAM"]){
+    const h = DATA.assets[id] && DATA.assets[id].h1; if (!h || h.length < 2) continue;
+    for (let i = h.length-2; i >= Math.max(0, h.length-8); i--){ const d = f[id](h[i][0]); if (d){ calib[id] = h[i][1]/d; break; } }
+  }
+}
+function setLive(){
+  const el = $("#live"), on = isLive();
+  el.className = "live" + (on ? " on" : "");
+  el.textContent = on ? "Canlı" : "Bağlantı bekleniyor…";
+}
+function connect(){
+  if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
+  try { ws = new WebSocket(WS); } catch(e) { return; }
+  ws.onopen = () => { retry = 0; };
+  ws.onmessage = ev => {
+    try { const m = JSON.parse(ev.data).data; if (m && m.s){ last[m.s] = parseFloat(m.c); lastMsg = Date.now(); wsOpen = true; schedule(); } } catch(e) {}
+  };
+  ws.onclose = () => { wsOpen = false; setLive(); if (!document.hidden) setTimeout(connect, Math.min(30000, 1000 * 2 ** retry++)); };
+  ws.onerror = () => { try { ws.close(); } catch(e) {} };
+}
+let pending = false;
+function schedule(){ if (pending) return; pending = true; setTimeout(() => { pending = false; tick(); }, 500); }
+const prevP = {};
+function setPrice(el, key, v){
+  const old = prevP[key]; prevP[key] = v;
+  el.textContent = fmtPrice(v);
+  if (old != null && v !== old){ el.classList.remove("fl-up", "fl-down"); void el.offsetWidth; el.classList.add(v > old ? "fl-up" : "fl-down"); }
+}
+function setChg(el, id, suffix){
+  const r = ref1G[id], v = livePrice(id); if (!r || v == null) return;
+  const ch = (v/r - 1)*100;
+  el.textContent = fmtPct(ch) + suffix; el.className = el.className.split(" ")[0] + " " + cls(ch);
+}
+function tick(){
+  setLive();
+  document.querySelectorAll(".chip-asset").forEach(b => {
+    const id = b.dataset.id, v = livePrice(id); if (v == null) return;
+    setPrice(b.querySelector(".p"), "c:" + id, v);
+    setChg(b.querySelector(".ch"), id, "");
+  });
+  const id = state.sel, v = livePrice(id);
+  if (v == null) return;
+  setPrice($("#dprice"), "d:" + id, v);
+  setChg($("#dchg"), id, " son 24 saat");
+  if (area && chartLast && chartLast.id === id){
+    const sec = {h1:3600, h4:14400, d1:86400, w1:604800}[chartLast.kind], off = chartLast.kind === "w1" ? 3*86400 : 0;
+    let t = Math.floor((Date.now()/1000 + off)/sec)*sec - off;
+    if (t < chartLast.time) t = chartLast.time;
+    try { area.update({ time: t + TR_OFFSET, value: v }); chartLast.time = t; } catch(e) {}
+  }
+}
+setInterval(() => { if (!document.hidden && isLive()) renderRace(); }, 5000);
+
+connect();
 refreshAll(true);
 </script>
 </body>
