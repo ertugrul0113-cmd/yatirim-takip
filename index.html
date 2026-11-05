@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Yatırım">
+<meta name="theme-color" content="#121733">
+<title>Yatırım Takip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+:root{
+  color-scheme: light dark;
+  --bg:#121733; --panel:#1b2147; --panel2:#232a58; --ink:#f3f4ff; --muted:#a3a8d6; --grid:rgba(163,168,214,.12);
+  --up:#2ee59d; --down:#ff5c7a; --kripto:#ffb547; --fon:#c084fc; --doviz:#38d6e0;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#eef0fb; --panel:#ffffff; --panel2:#e4e7f8; --ink:#141834; --muted:#5d6390; --grid:rgba(20,24,52,.08);
+    --up:#0f9d6a; --down:#d6304f; --kripto:#c77700; --fon:#8b3fd6; --doviz:#0b8f99;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-tap-highlight-color:transparent}
+body{min-height:100%}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+button:focus-visible{outline:2px solid var(--doviz);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:14px 16px 40px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+h1{font-size:1.35rem;font-weight:800;margin:0;letter-spacing:-.01em}
+.upd{font-size:.78rem;color:var(--muted)}
+.refresh{width:40px;height:40px;border-radius:50%;background:var(--panel);font-size:1.1rem}
+.refresh.spin{animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.refresh.spin{animation:none}}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--panel);padding:5px;border-radius:14px;margin-bottom:12px}
+.tab{padding:10px 4px;border-radius:10px;font-weight:700;font-size:.92rem;color:var(--muted)}
+.tab[aria-selected="true"]{color:#141834;background:var(--c)}
+.list{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;margin-bottom:12px}
+.list::-webkit-scrollbar{display:none}
+.chip-asset{flex:0 0 auto;min-width:132px;text-align:left;padding:10px 12px;border-radius:12px;background:var(--panel);border:2px solid transparent}
+.chip-asset[aria-pressed="true"]{border-color:var(--c)}
+.chip-asset .n{font-weight:700;font-size:.9rem;white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis}
+.chip-asset .p{font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:2px}
+.chip-asset .ch{font-size:.8rem;font-weight:700;font-variant-numeric:tabular-nums}
+.up{color:var(--up)} .down{color:var(--down)}
+.detail{background:var(--panel);border-radius:18px;padding:16px;margin-bottom:14px;border-top:4px solid var(--c)}
+.dname{font-size:.95rem;color:var(--muted);font-weight:600}
+.dprice{font-size:2.1rem;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.15;margin:2px 0}
+.dchg{font-weight:700;font-variant-numeric:tabular-nums;font-size:.95rem}
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 8px}
+.seg button{padding:7px 11px;border-radius:999px;background:var(--panel2);font-size:.85rem;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg button:disabled{opacity:.35;cursor:not-allowed}
+#chart{position:relative;height:260px;width:100%}
+.cmsg{font-size:.85rem;color:var(--muted);min-height:1.2em;margin-top:6px}
+h2{font-size:1.1rem;margin:0 0 2px;font-weight:800}
+.sub{font-size:.85rem;color:var(--muted);margin:0}
+.race{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.row{display:grid;grid-template-columns:118px 1fr 78px;align-items:center;gap:10px}
+.row .lbl{font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row.me .lbl::before{content:"● ";color:var(--c)}
+.track{position:relative;height:22px;background:var(--panel2);border-radius:6px;overflow:hidden}
+.track .zero{position:absolute;top:0;bottom:0;width:2px;background:var(--muted);opacity:.5}
+.bar{position:absolute;top:3px;bottom:3px;border-radius:4px;transition:all .45s ease}
+@media (prefers-reduced-motion: reduce){.bar{transition:none}}
+.row .val{text-align:right;font-weight:800;font-variant-numeric:tabular-nums;font-size:.9rem}
+.na{color:var(--muted);font-weight:600;font-size:.8rem}
+.note{font-size:.78rem;color:var(--muted);line-height:1.5;margin-top:14px}
+.empty{padding:14px;background:var(--panel);border-radius:12px;color:var(--muted);font-size:.9rem;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Yatırım Takip</h1>
+      <div class="upd" id="upd">Veriler yükleniyor…</div>
+    </div>
+    <button class="refresh" id="refresh" aria-label="Verileri yenile">↻</button>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="kripto" style="--c:var(--kripto)">Kripto</button>
+    <button class="tab" role="tab" data-tab="fon" style="--c:var(--fon)">TEFAS Fonlar</button>
+    <button class="tab" role="tab" data-tab="doviz" style="--c:var(--doviz)">Döviz &amp; Altın</button>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <section class="detail" id="detail">
+    <div class="dname" id="dname">—</div>
+    <div class="dprice" id="dprice">—</div>
+    <div class="dchg" id="dchg">&nbsp;</div>
+    <div class="seg" id="ivs" aria-label="Grafik aralığı"></div>
+    <div id="chart"></div>
+    <div class="cmsg" id="cmsg"></div>
+  </section>
+
+  <section class="detail" id="cmp" style="--c:var(--ink)">
+    <h2>Kim daha çok kazandırdı?</h2>
+    <p class="sub" id="cmpsub">TL bazında yüzde değişim</p>
+    <div class="seg" id="pers" aria-label="Kıyas dönemi"></div>
+    <div class="race" id="race"></div>
+  </section>
+
+  <p class="note">Kripto fiyatları Binance'ten anlık gelir. Döviz, altın ve fonlar saatte bir güncellenir; TEFAS fon fiyatları günde bir kez açıklanır. Gram altın, ons altın ve dolar kurundan hesaplanır, kuyumcu fiyatından biraz farklı olabilir. Bu ekran yatırım tavsiyesi değildir.</p>
+</div>
+
+<script>
+"use strict";
+const BN = "https://data-api.binance.vision/api/v3/klines";
+const IVMAP = {h1:"1h", h4:"4h", d1:"1d", w1:"1w"};
+const LIMIT = {h1:1000, h4:600, d1:1000, w1:300};
+const WINDOW = {h1:7*86400, h4:60*86400, d1:365*86400, w1:5.2*365*86400};
+const TR_OFFSET = 3*3600; // Türkiye UTC+3
+const INTERVALS = [["h1","1 Saat"],["h4","4 Saat"],["d1","1 Gün"],["w1","1 Hafta"]];
+const PERIODS = [["1G","1 Gün"],["1H","1 Hafta"],["1A","1 Ay"],["3A","3 Ay"],["6A","6 Ay"],["YBB","Yılbaşından"],["1Y","1 Yıl"],["5Y","5 Yıl"]];
+const CORE = ["USD","EUR","GRAM","BTC","ETH"];
+
+const assets = {};
+const groups = {kripto:[], fon:[], doviz:[]};
+function addAsset(a){ assets[a.id]=a; groups[a.group].push(a.id); }
+addAsset({id:"BTC", group:"kripto", kind:"bn", name:"Bitcoin", sub:"BTC/TL", sym:"BTCTRY", usdt:"BTCUSDT", color:"#ffb547"});
+addAsset({id:"ETH", group:"kripto", kind:"bn", name:"Ethereum", sub:"ETH/TL", sym:"ETHTRY", usdt:"ETHUSDT", color:"#8f9bff"});
+addAsset({id:"ETHFI", group:"kripto", kind:"bn", name:"ether.fi", sub:"ETHFI/TL", sym:"ETHFITRY", usdt:"ETHFIUSDT", color:"#5eead4"});
+addAsset({id:"USD", group:"doviz", kind:"json", name:"Dolar", sub:"USD/TL", color:"#2ee59d"});
+addAsset({id:"EUR", group:"doviz", kind:"json", name:"Euro", sub:"EUR/TL", color:"#4fa3ff"});
+addAsset({id:"GRAM", group:"doviz", kind:"json", name:"Gram Altın", sub:"TL", color:"#ffd43b"});
+addAsset({id:"SERT", group:"doviz", kind:"json", name:"Altın Sertifikası", sub:"ALTINS1", color:"#f59f00"});
+
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+const state = { tab: lsGet("tab") || "kripto", sel: lsGet("sel") || "BTC", iv: "d1", per: lsGet("per") || "1Y", fund: lsGet("fund") };
+let DATA = {assets:{}, funds:{}};
+const $ = s => document.querySelector(s);
+
+/* ---------- veri ---------- */
+const cache = new Map();
+function bn(sym, kind){
+  const key = sym+"|"+kind, c = cache.get(key);
+  if (c && Date.now()-c.at < 55000) return c.p;
+  const p = fetch(`${BN}?symbol=${sym}&interval=${IVMAP[kind]}&limit=${LIMIT[kind]}`)
+    .then(r => { if(!r.ok) throw new Error(sym+" "+r.status); return r.json(); })
+    .then(j => j.map(k => [Math.floor(k[0]/1000), parseFloat(k[4])]));
+  cache.set(key, {at:Date.now(), p});
+  p.catch(() => cache.delete(key));
+  return p;
+}
+async function cryptoSeries(a, kind){
+  try { const d = await bn(a.sym, kind); if (d.length > 1) return d; } catch(e) {}
+  const [x, u] = await Promise.all([bn(a.usdt, kind), bn("USDTTRY", kind)]);
+  const m = new Map(u);
+  return x.filter(p => m.has(p[0])).map(p => [p[0], p[1]*m.get(p[0])]);
+}
+function bucket(s, sec, off){
+  const out = [];
+  for (const p of s){
+    const b = Math.floor((p[0]+off)/sec), t = b*sec-off;
+    if (out.length && out[out.length-1][0] === t) out[out.length-1][1] = p[1];
+    else out.push([t, p[1]]);
+  }
+  return out;
+}
+async function getSeries(id, kind){
+  const a = assets[id]; if (!a) return null;
+  if (a.kind === "bn") return cryptoSeries(a, kind);
+  const src = a.kind === "fund" ? DATA.funds[a.code] : DATA.assets[id];
+  if (!src) return null;
+  const h1 = src.h1 && src.h1.length > 1 ? src.h1 : null;
+  const d1 = src.d1 && src.d1.length > 1 ? src.d1 : null;
+  if (kind === "h1") return h1;
+  if (kind === "h4") return h1 && bucket(h1, 14400, 0);
+  if (kind === "d1") return d1;
+  if (kind === "w1") return d1 && bucket(d1, 604800, 3*86400);
+  return null;
+}
+async function current(id){
+  let s = null;
+  if (assets[id].kind !== "fund") s = await getSeries(id, "h1").catch(() => null);
+  if (!s || !s.length) s = await getSeries(id, "d1").catch(() => null);
+  return s && s.length ? s[s.length-1] : null;
+}
+function periodStart(p){
+  const now = Date.now()/1000, D = 86400;
+  switch(p){
+    case "1G": return now-D; case "1H": return now-7*D; case "1A": return now-30*D;
+    case "3A": return now-91*D; case "6A": return now-182*D; case "1Y": return now-365*D; case "5Y": return now-5*365*D;
+    case "YBB": { const y = new Date(Date.now()+TR_OFFSET*1000).getUTCFullYear(); return Date.UTC(y,0,1)/1000 - TR_OFFSET; }
+  }
+}
+function priceAt(s, t){
+  let lo = 0, hi = s.length-1, ans = -1;
+  while (lo <= hi){ const m = (lo+hi) >> 1; if (s[m][0] <= t){ ans = m; lo = m+1; } else hi = m-1; }
+  if (ans < 0) return (s[0][0]-t < 6*86400) ? s[0][1] : null; // yeterince eski veri yok
+  return s[ans][1];
+}
+async function periodReturn(id, p){
+  const a = assets[id];
+  const short = p === "1G" || p === "1H";
+  let kind = (short && a.kind !== "fund") ? "h1" : (p === "5Y" && a.kind === "bn" ? "w1" : "d1");
+  let s = await getSeries(id, kind).catch(() => null);
+  if ((!s || s.length < 2) && kind === "h1") s = await getSeries(id, "d1").catch(() => null);
+  const cur = await current(id).catch(() => null);
+  if (!s || s.length < 2 || !cur) return null;
+  const start = priceAt(s, periodStart(p));
+  if (!start) return null;
+  return (cur[1]/start - 1)*100;
+}
+async function loadData(){
+  try {
+    const r = await fetch("data/market.json?v="+Date.now(), {cache:"no-store"});
+    if (!r.ok) throw new Error(r.status);
+    DATA = await r.json();
+    DATA.assets = DATA.assets || {}; DATA.funds = DATA.funds || {};
+    const d = new Date(DATA.updated);
+    $("#upd").textContent = "Döviz, altın, fon: " + d.toLocaleString("tr-TR",{timeZone:"Europe/Istanbul",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+  } catch(e) {
+    $("#upd").textContent = "Döviz/fon verisi henüz yok — GitHub'da iş akışını çalıştır";
+  }
+  groups.fon = [];
+  for (const code of Object.keys(DATA.funds)){
+    const id = "F:"+code;
+    assets[id] = {id, group:"fon", kind:"fund", code, name:code, sub:DATA.funds[code].name || "", color:"#c084fc"};
+    groups.fon.push(id);
+  }
+  if (!state.fund || !DATA.funds[state.fund]) state.fund = Object.keys(DATA.funds)[0] || null;
+}
+
+/* ---------- biçim ---------- */
+const nfCache = {};
+const nf = d => nfCache[d] || (nfCache[d] = new Intl.NumberFormat("tr-TR",{minimumFractionDigits:d,maximumFractionDigits:d}));
+function fmtPrice(v){ const d = v >= 10 ? 2 : v >= 1 ? 4 : 6; return nf(d).format(v) + " ₺"; }
+function fmtPct(v){ return (v > 0 ? "+" : v < 0 ? "−" : "") + "%" + nf(2).format(Math.abs(v)); }
+function cls(v){ return v > 0 ? "up" : v < 0 ? "down" : ""; }
+function css(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function label(id){ const a = assets[id]; return a.kind === "fund" ? a.code + " fonu" : a.name; }
+
+/* ---------- liste ---------- */
+function renderTabs(){
+  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === state.tab));
+}
+function renderList(){
+  const box = $("#list"); box.innerHTML = "";
+  const ids = groups[state.tab];
+  if (!ids.length){
+    box.innerHTML = '<div class="empty">Fon listesi boş. GitHub\'daki <b>fonlar.txt</b> dosyasına fon kodlarını yaz; bir saat içinde burada görünür.</div>';
+    return;
+  }
+  for (const id of ids){
+    const a = assets[id];
+    const b = document.createElement("button");
+    b.className = "chip-asset"; b.style.setProperty("--c", a.color);
+    b.setAttribute("aria-pressed", id === state.sel);
+    b.innerHTML = `<div class="n"></div><div class="p">…</div><div class="ch">&nbsp;</div>`;
+    b.querySelector(".n").textContent = a.kind === "fund" ? a.code : a.name;
+    b.title = a.sub;
+    b.onclick = () => select(id);
+    box.appendChild(b);
+    fillChip(b, id);
+  }
+}
+async function fillChip(b, id){
+  const [cur, ch] = await Promise.all([current(id).catch(() => null), periodReturn(id, "1G").catch(() => null)]);
+  b.querySelector(".p").textContent = cur ? fmtPrice(cur[1]) : "veri yok";
+  const c = b.querySelector(".ch");
+  if (ch != null){ c.textContent = fmtPct(ch); c.className = "ch " + cls(ch); }
+}
+
+/* ---------- detay & grafik ---------- */
+let chart = null, area = null, chartToken = 0;
+function chartColors(){
+  return { text: css("--muted"), grid: css("--grid") };
+}
+function ensureChart(){
+  if (chart || !window.LightweightCharts) return;
+  const el = $("#chart"), c = chartColors();
+  chart = LightweightCharts.createChart(el, {
+    width: el.clientWidth, height: 260,
+    layout: { background: {type:"solid", color:"transparent"}, textColor: c.text, fontFamily: "Manrope, system-ui, sans-serif" },
+    grid: { vertLines: {visible:false}, horzLines: {color: c.grid} },
+    rightPriceScale: { borderVisible:false },
+    timeScale: { borderVisible:false, timeVisible:true, secondsVisible:false },
+    crosshair: { mode: 0 },
+    localization: { locale: "tr-TR", priceFormatter: v => { const d = Math.abs(v) >= 10 ? 2 : Math.abs(v) >= 1 ? 4 : 6; return nf(d).format(v); } },
+    handleScale: { axisPressedMouseMove: false }
+  });
+  area = chart.addAreaSeries({ lineWidth: 2, priceLineVisible: false });
+  new ResizeObserver(() => chart.applyOptions({ width: el.clientWidth })).observe(el);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    const c2 = chartColors();
+    chart.applyOptions({ layout:{textColor:c2.text}, grid:{horzLines:{color:c2.grid}} });
+    drawChart();
+  });
+}
+function renderIntervals(){
+  const box = $("#ivs"); box.innerHTML = "";
+  const isFund = assets[state.sel].kind === "fund";
+  if (isFund && (state.iv === "h1" || state.iv === "h4")) state.iv = "d1";
+  for (const [k, t] of INTERVALS){
+    const b = document.createElement("button");
+    b.textContent = t; b.setAttribute("aria-pressed", k === state.iv);
+    if (isFund && (k === "h1" || k === "h4")){ b.disabled = true; b.title = "Fon fiyatları günlüktür"; }
+    b.onclick = () => { state.iv = k; renderIntervals(); drawChart(); };
+    box.appendChild(b);
+  }
+}
+async function renderHeader(){
+  const id = state.sel, a = assets[id];
+  const det = $("#detail"); det.style.setProperty("--c", a.color);
+  $("#dname").textContent = a.kind === "fund" ? `${a.code} · ${a.sub}` : `${a.name} (${a.sub})`;
+  const [cur, ch] = await Promise.all([current(id).catch(() => null), periodReturn(id, "1G").catch(() => null)]);
+  if (id !== state.sel) return;
+  $("#dprice").textContent = cur ? fmtPrice(cur[1]) : "veri yok";
+  const el = $("#dchg");
+  el.textContent = ch != null ? `${fmtPct(ch)} son 24 saat` : " ";
+  el.className = "dchg " + cls(ch || 0);
+}
+async function drawChart(){
+  ensureChart(); if (!chart) { $("#cmsg").textContent = "Grafik kütüphanesi yüklenemedi, internet bağlantını kontrol et."; return; }
+  const token = ++chartToken, id = state.sel, kind = state.iv;
+  $("#cmsg").textContent = "Grafik yükleniyor…";
+  let s = null;
+  try { s = await getSeries(id, kind); } catch(e) { s = null; }
+  if (token !== chartToken) return;
+  if (!s || s.length < 2){ area.setData([]); $("#cmsg").textContent = "Bu aralık için veri yok."; return; }
+  const from = Date.now()/1000 - WINDOW[kind];
+  let v = s.filter(p => p[0] >= from); if (v.length < 2) v = s;
+  const ch = (v[v.length-1][1]/v[0][1] - 1)*100;
+  const col = ch >= 0 ? css("--up") : css("--down");
+  area.applyOptions({ lineColor: col, topColor: col + "55", bottomColor: col + "05" });
+  area.setData(v.map(p => ({ time: p[0] + TR_OFFSET, value: p[1] })));
+  chart.applyOptions({ timeScale: { timeVisible: kind === "h1" || kind === "h4" } });
+  chart.timeScale().fitContent();
+  const span = {h1:"son 7 gün, saatlik", h4:"son 60 gün, 4 saatlik", d1:"son 1 yıl, günlük", w1:"son 5 yıl, haftalık"}[kind];
+  const el = $("#cmsg"); el.textContent = `${span}: `;
+  const b = document.createElement("b"); b.className = cls(ch); b.textContent = fmtPct(ch); el.appendChild(b);
+}
+
+/* ---------- kıyas ---------- */
+function compareSet(){
+  const set = [state.sel];
+  for (const c of CORE) if (!set.includes(c)) set.push(c);
+  if (assets[state.sel].kind !== "fund" && state.fund && assets["F:"+state.fund]) set.push("F:"+state.fund);
+  return set;
+}
+function renderPeriods(){
+  const box = $("#pers"); box.innerHTML = "";
+  for (const [k, t] of PERIODS){
+    const b = document.createElement("button");
+    b.textContent = t; b.setAttribute("aria-pressed", k === state.per);
+    b.onclick = () => { state.per = k; lsSet("per", k); renderPeriods(); renderRace(); };
+    box.appendChild(b);
+  }
+}
+let raceToken = 0;
+async function renderRace(){
+  const token = ++raceToken, set = compareSet(), per = state.per;
+  const perName = PERIODS.find(p => p[0] === per)[1];
+  $("#cmpsub").textContent = `${perName} içinde TL bazında getiri`;
+  const box = $("#race");
+  if (!box.children.length || box.dataset.key !== set.join()){
+    box.dataset.key = set.join(); box.innerHTML = "";
+    for (const id of set){
+      const r = document.createElement("div");
+      r.className = "row" + (id === state.sel ? " me" : ""); r.dataset.id = id;
+      r.style.setProperty("--c", assets[id].color);
+      r.innerHTML = `<div class="lbl"></div><div class="track"><div class="zero"></div><div class="bar"></div></div><div class="val na">…</div>`;
+      r.querySelector(".lbl").textContent = label(id);
+      box.appendChild(r);
+    }
+  }
+  const vals = await Promise.all(set.map(id => periodReturn(id, per).catch(() => null)));
+  if (token !== raceToken) return;
+  const items = set.map((id, i) => ({id, v: vals[i]}));
+  items.sort((a, b) => (b.v ?? -Infinity) - (a.v ?? -Infinity));
+  const nums = items.filter(x => x.v != null).map(x => x.v);
+  const max = Math.max(0, ...nums), min = Math.min(0, ...nums), range = (max - min) || 1;
+  const zero = (-min / range) * 100;
+  for (const it of items){
+    const r = box.querySelector(`[data-id="${CSS.escape(it.id)}"]`);
+    box.appendChild(r); // sırala
+    const bar = r.querySelector(".bar"), val = r.querySelector(".val");
+    r.querySelector(".zero").style.left = `calc(${zero}% - 1px)`;
+    if (it.v == null){ bar.style.width = "0"; val.textContent = "veri yok"; val.className = "val na"; continue; }
+    const w = Math.abs(it.v) / range * 100;
+    bar.style.left = (it.v >= 0 ? zero : zero - w) + "%";
+    bar.style.width = Math.max(w, .6) + "%";
+    bar.style.background = assets[it.id].color;
+    val.textContent = fmtPct(it.v); val.className = "val " + cls(it.v);
+  }
+}
+
+/* ---------- akış ---------- */
+function select(id){
+  if (!assets[id]) return;
+  state.sel = id; lsSet("sel", id);
+  if (assets[id].kind === "fund"){ state.fund = assets[id].code; lsSet("fund", state.fund); }
+  document.querySelectorAll(".chip-asset").forEach(b => b.setAttribute("aria-pressed", false));
+  renderList(); renderIntervals(); renderHeader(); drawChart(); renderRace();
+}
+function setTab(t){
+  state.tab = t; lsSet("tab", t); renderTabs();
+  if (assets[state.sel].group !== t && groups[t].length) { select(groups[t][0]); return; }
+  renderList();
+}
+document.querySelectorAll(".tab").forEach(b => b.onclick = () => setTab(b.dataset.tab));
+
+async function refreshAll(full){
+  const btn = $("#refresh"); btn.classList.add("spin");
+  cache.clear();
+  if (full) await loadData();
+  if (!assets[state.sel]) state.sel = "BTC";
+  if (full) state.tab = assets[state.sel].group;
+  renderTabs(); renderList(); renderIntervals(); renderPeriods();
+  await Promise.all([renderHeader(), drawChart(), renderRace()]);
+  btn.classList.remove("spin");
+}
+$("#refresh").onclick = () => refreshAll(true);
+let lastFull = Date.now();
+setInterval(() => {
+  if (document.hidden) return;
+  const full = Date.now() - lastFull > 10*60*1000; if (full) lastFull = Date.now();
+  refreshAll(full);
+}, 60000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { lastFull = Date.now(); refreshAll(true); } });
+
+refreshAll(true);
+</script>
+</body>
+</html>

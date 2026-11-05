@@ -1,0 +1,9 @@
+# Takip etmek istediğin TEFAS fon kodlarını her satıra bir tane yaz.
+# Kodları tefas.gov.tr'de fonun sayfasında görebilirsin (ör. AFT, TCD, MAC).
+# '#' ile başlayan satırlar dikkate alınmaz.
+AFT
+TCD
+MAC
+YAY
+IPB
+TTE
