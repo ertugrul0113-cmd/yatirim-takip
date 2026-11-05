@@ -1,6 +1,6 @@
 """1 haftalık görünüm: eğilim, olası fiyat aralığı ve (yalnızca geçmişte işe yaradıysa) yön sinyali.
 Veriler: Binance (kripto fiyatları), alternative.me (Kripto Korku & Açgözlülük Endeksi),
-FRED / ABD Merkez Bankası (reel faiz, dolar endeksi), Yahoo Finance (ons altın, USD/TRY).
+Yahoo Finance (ons altın, USD/TRY, dolar endeksi, ABD 10 yıllık tahvil faizi).
 Yöntem: yürüyen pencereli (walk-forward) lojistik regresyon; isabet yalnızca modelin
 eğitimde görmediği dönemde ölçülür. Basit 'hep yukarı/aşağı' tahmininden belirgin
 iyi değilse yön gösterilmez, 'Belirsiz' yazılır.
@@ -85,12 +85,12 @@ def fear_greed():
     return daily(pd.Series([float(d["value"]) for d in j], index=idx))
 
 
-def fred(series_id):
-    txt = get("https://fred.stlouisfed.org/graph/fredgraph.csv", params={"id": series_id}).text
-    df = pd.read_csv(io.StringIO(txt))
-    dcol = df.columns[0]
-    v = pd.to_numeric(df[series_id], errors="coerce")
-    return daily(pd.Series(v.values, index=pd.to_datetime(df[dcol])))
+def yahoo(ticker):
+    import yfinance as yf
+    h = yf.Ticker(ticker).history(period="10y", interval="1d", auto_adjust=False)
+    s = h["Close"].dropna()
+    s.index = pd.to_datetime([d.date() for d in s.index])
+    return daily(s)
 
 
 def from_market(key):
@@ -275,14 +275,15 @@ def main():
         usd = from_market("USD")
         feats, text = {}, []
         try:
-            ry = fred("DFII10")
-            feats["ry28"] = ry.diff(28)
-            c = ry.diff(28).dropna().iloc[-1]
-            text.append(f"ABD reel faizi son 4 haftada {f"{abs(c):.2f}".replace(".", ",")} puan {'düştü (altın için genelde olumlu)' if c < 0 else 'yükseldi (altın için genelde olumsuz)'}")
+            tnx = yahoo("^TNX")
+            feats["tnx28"] = tnx.diff(28)
+            c = tnx.diff(28).dropna().iloc[-1]
+            puan = f"{abs(c):.2f}".replace(".", ",")
+            text.append(f"ABD 10 yıllık tahvil faizi son 4 haftada {puan} puan {'düştü (altın için genelde olumlu)' if c < 0 else 'yükseldi (altın için genelde olumsuz)'}")
         except Exception as ex:  # noqa
-            print("Reel faiz alınamadı:", ex)
+            print("Tahvil faizi alınamadı:", ex)
         try:
-            dxy = fred("DTWEXBGS")
+            dxy = yahoo("DX-Y.NYB")
             feats["dxy28"] = np.log(dxy / dxy.shift(28))
             c = (dxy.iloc[-1] / dxy.dropna().iloc[-29] - 1)
             text.append(f"Dolar endeksi son 4 haftada {pct(c)} {'güçlendi (altın için genelde olumsuz)' if c > 0 else 'zayıfladı (altın için genelde olumlu)'}")
