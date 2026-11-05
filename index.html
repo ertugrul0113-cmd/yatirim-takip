@@ -142,7 +142,7 @@ const state = { tab: lsGet("tab") || "kripto", sel: lsGet("sel") || "BTC", iv: "
 let DATA = {assets:{}, funds:{}};
 const $ = s => document.querySelector(s);
 
-/* ---------- veri ---------- */
+// ---------- veri ----------
 const cache = new Map();
 function bn(sym, kind){
   const key = sym+"|"+kind, c = cache.get(key);
@@ -234,7 +234,7 @@ async function loadData(){
   if (!state.fund || !DATA.funds[state.fund]) state.fund = Object.keys(DATA.funds)[0] || null;
 }
 
-/* ---------- biçim ---------- */
+// ---------- biçim ----------
 const nfCache = {};
 const nf = d => nfCache[d] || (nfCache[d] = new Intl.NumberFormat("tr-TR",{minimumFractionDigits:d,maximumFractionDigits:d}));
 function fmtPrice(v){ const d = v >= 10 ? 2 : v >= 1 ? 4 : 6; return nf(d).format(v) + " ₺"; }
@@ -243,7 +243,7 @@ function cls(v){ return v > 0 ? "up" : v < 0 ? "down" : ""; }
 function css(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
 function label(id){ const a = assets[id]; return a.kind === "fund" ? a.code + " fonu" : a.name; }
 
-/* ---------- liste ---------- */
+// ---------- liste ----------
 function renderTabs(){
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === state.tab));
 }
@@ -274,7 +274,7 @@ async function fillChip(b, id){
   if (ch != null){ c.textContent = fmtPct(ch); c.className = "ch " + cls(ch); }
 }
 
-/* ---------- detay & grafik ---------- */
+// ---------- detay & grafik ----------
 let chart = null, area = null, chartToken = 0;
 function chartColors(){
   return { text: css("--muted"), grid: css("--grid") };
@@ -344,7 +344,7 @@ async function drawChart(){
   const b = document.createElement("b"); b.className = cls(ch); b.textContent = fmtPct(ch); el.appendChild(b);
 }
 
-/* ---------- kıyas ---------- */
+// ---------- kıyas ----------
 function compareSet(){
   const set = [state.sel];
   for (const c of CORE) if (!set.includes(c)) set.push(c);
@@ -398,7 +398,7 @@ async function renderRace(){
   }
 }
 
-/* ---------- akış ---------- */
+// ---------- akış ----------
 function select(id){
   if (!assets[id]) return;
   state.sel = id; lsSet("sel", id);
