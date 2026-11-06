@@ -1,0 +1,951 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Yatırım">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f2f2f7">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
+<title>Yatırım Takip</title>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+:root{
+  color-scheme: light dark;
+  --bg:#f2f2f7; --card:#ffffff; --fill:rgba(120,120,128,.12); --thumb:#ffffff;
+  --label:#000000; --label2:rgba(60,60,67,.6); --label3:rgba(60,60,67,.3); --sep:rgba(60,60,67,.16);
+  --up:#34c759; --down:#ff3b30; --blue:#007aff; --barbg:rgba(248,248,250,.72);
+  --kripto:#ff9500; --fon:#af52de; --doviz:#00a6d6; --grid:rgba(60,60,67,.09);
+  --shadow:0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05);
+  --accent:var(--kripto);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#000000; --card:#1c1c1e; --fill:rgba(118,118,128,.24); --thumb:#636366;
+    --label:#ffffff; --label2:rgba(235,235,245,.6); --label3:rgba(235,235,245,.3); --sep:rgba(84,84,88,.55);
+    --up:#30d158; --down:#ff453a; --blue:#0a84ff; --barbg:rgba(20,20,22,.72);
+    --kripto:#ff9f0a; --fon:#bf5af2; --doviz:#64d2ff; --grid:rgba(235,235,245,.07);
+    --shadow:none;
+  }
+}
+body[data-tab="fon"]{--accent:var(--fon)}
+body[data-tab="doviz"]{--accent:var(--doviz)}
+*{box-sizing:border-box}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;background:var(--bg)}
+html.sheet-open{background:#000}
+html.lock,html.lock body{overflow:hidden}
+body{margin:0;background:var(--bg);color:var(--label);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Segoe UI",Roboto,sans-serif;font-size:17px;line-height:1.3;transition:background-color .3s}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.up{color:var(--up)} .down{color:var(--down)}
+
+.glow{position:fixed;inset:0 0 auto 0;height:420px;pointer-events:none;z-index:0;transition:opacity .5s}
+.glow i{position:absolute;inset:0;opacity:0;transition:opacity .6s ease}
+.glow i.on{opacity:1}
+.g-kripto{background:radial-gradient(60% 70% at 15% 0%,rgba(255,149,0,.30),transparent 70%),radial-gradient(50% 60% at 95% 10%,rgba(255,45,85,.22),transparent 70%)}
+.g-fon{background:radial-gradient(60% 70% at 15% 0%,rgba(175,82,222,.30),transparent 70%),radial-gradient(50% 60% at 95% 10%,rgba(90,100,255,.22),transparent 70%)}
+.g-doviz{background:radial-gradient(60% 70% at 15% 0%,rgba(0,190,220,.28),transparent 70%),radial-gradient(50% 60% at 95% 10%,rgba(255,204,0,.24),transparent 70%)}
+
+.nav{position:fixed;top:0;left:0;right:0;z-index:20;padding-top:env(safe-area-inset-top,0px);height:calc(44px + env(safe-area-inset-top,0px));display:flex;align-items:flex-end;transition:background-color .25s,box-shadow .25s}
+.nav-in{height:44px;width:100%;max-width:720px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+.nav.solid{background:var(--barbg);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 .5px 0 var(--sep)}
+.stitle{font-size:17px;font-weight:600;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .25s}
+.nav.solid .stitle{opacity:1;transform:none}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--label2);padding:5px 10px;border-radius:999px;background:var(--fill)}
+.live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--label3)}
+.live.on{color:var(--up)} .live.on::before{background:var(--up);box-shadow:0 0 0 0 var(--up);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--up) 60%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.iconbtn{width:34px;height:34px;border-radius:50%;background:var(--fill);display:grid;place-items:center;color:var(--accent);transition:transform .12s ease-out}
+.iconbtn:active{transform:scale(.88)}
+.iconbtn svg{width:18px;height:18px}
+.iconbtn.spin svg{animation:sp .9s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+main{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:calc(44px + env(safe-area-inset-top,0px)) 16px calc(100px + env(safe-area-inset-bottom,0px));touch-action:pan-y;transform-origin:50% 0}
+.lt{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:4px 4px 2px}
+h1{font-size:34px;line-height:41px;font-weight:700;letter-spacing:.012em;margin:0}
+.upd{font-size:13px;color:var(--label2);margin:0 4px 16px}
+#page{will-change:transform}
+.card{background:var(--card);border-radius:18px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.card-pad{padding:16px}
+.sect{font-size:13px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--label2);margin:22px 16px 7px}
+h2{font-size:20px;font-weight:700;margin:0;letter-spacing:.01em}
+.sub{font-size:13px;color:var(--label2);margin:2px 0 0}
+
+.seg{position:relative;display:grid;grid-template-columns:repeat(var(--n),1fr);background:var(--fill);border-radius:9px;padding:2px;isolation:isolate}
+.seg .thumb{position:absolute;z-index:-1;top:2px;bottom:2px;left:2px;width:calc((100% - 4px) / var(--n));transform:translateX(calc(100% * var(--i)));background:var(--thumb);border-radius:7px;box-shadow:0 3px 8px rgba(0,0,0,.12),0 3px 1px rgba(0,0,0,.04);transition:transform .42s cubic-bezier(.3,1.25,.45,1)}
+.seg button{height:30px;font-size:13px;font-weight:500;color:var(--label);border-radius:7px;transition:opacity .15s}
+.seg button[aria-pressed="true"]{font-weight:600}
+.seg button:active{opacity:.6}
+.seg-wrap{margin:0 0 16px}
+
+.fear{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center}
+.gauge{width:150px;height:auto;display:block}
+.gauge .val{font-size:34px;font-weight:700;fill:var(--label);font-family:inherit}
+.gauge .knob{transition:transform .9s cubic-bezier(.3,1.2,.4,1)}
+.fear-l{font-size:22px;font-weight:700;letter-spacing:.01em}
+.fear-hist{display:flex;gap:16px;margin-top:8px;font-size:13px;color:var(--label2)}
+.fear-hist b{display:block;font-size:17px;color:var(--label);font-weight:600}
+.fear-src{font-size:12px;color:var(--label2);margin-top:12px;line-height:1.4}
+.more{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 16px;border-top:.5px solid var(--sep);font-size:15px;color:var(--blue)}
+.more svg{width:14px;height:14px;transition:transform .35s cubic-bezier(.3,1.2,.4,1)}
+.more[aria-expanded="true"] svg{transform:rotate(90deg)}
+.acc{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.3,1,.4,1)}
+.acc.open{grid-template-rows:1fr}
+.acc>div{overflow:hidden}
+.comp{padding:10px 16px;border-top:.5px solid var(--sep)}
+.comp-h{display:flex;justify-content:space-between;font-size:15px;font-weight:600}
+.comp-t{font-size:13px;color:var(--label2);margin-top:2px}
+.comp-bar{height:5px;border-radius:3px;background:var(--fill);margin-top:7px;overflow:hidden}
+.comp-bar i{display:block;height:100%;border-radius:3px}
+
+.row{display:grid;grid-template-columns:42px 1fr 60px auto;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 16px;position:relative;transition:background-color .2s}
+.row:active{background:var(--fill);transition:none}
+.row+.row::before{content:"";position:absolute;top:0;left:70px;right:0;height:.5px;background:var(--sep)}
+.ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px;background:linear-gradient(135deg,var(--c1),var(--c2));box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 2px 6px color-mix(in srgb,var(--c2) 35%,transparent);letter-spacing:-.02em}
+.nm{min-width:0}
+.nm b{display:block;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm small{display:block;font-size:13px;color:var(--label2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fct{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:600;margin-top:3px;padding:1px 7px;border-radius:999px;background:color-mix(in srgb,currentColor 13%,transparent)}
+.spark{width:60px;height:30px;overflow:visible}
+.pr{text-align:right}
+.pr .p{display:block;font-size:16px;font-weight:600;white-space:nowrap}
+.pill{display:inline-block;margin-top:4px;min-width:72px;text-align:center;padding:3px 7px;border-radius:7px;font-size:13px;font-weight:600;color:#fff;background:var(--label3)}
+.pill.up{background:var(--up);color:#fff} .pill.down{background:var(--down);color:#fff}
+.empty{padding:16px;color:var(--label2);font-size:15px;line-height:1.45}
+.fl-up{animation:flu .9s ease-out} .fl-down{animation:fld .9s ease-out}
+@keyframes flu{from{color:var(--up)}} @keyframes fld{from{color:var(--down)}}
+
+.race{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.rrow{display:grid;grid-template-columns:96px 1fr 72px;align-items:center;gap:10px}
+.rrow .lbl{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rrow.me .lbl{color:var(--accent)}
+.track{position:relative;height:22px;background:var(--fill);border-radius:6px;overflow:hidden}
+.track .zero{position:absolute;top:0;bottom:0;width:2px;background:var(--label3)}
+.bar{position:absolute;top:3px;bottom:3px;border-radius:4px;transition:left .6s cubic-bezier(.3,1.15,.4,1),width .6s cubic-bezier(.3,1.15,.4,1)}
+.rrow .val{text-align:right;font-weight:700;font-size:14px}
+.na{color:var(--label2);font-weight:500}
+.note{font-size:12px;color:var(--label2);line-height:1.5;margin:6px 6px 0}
+
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--barbg);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 -.5px 0 var(--sep);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabbar-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);height:50px}
+.tb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;font-weight:500;color:var(--label2);transition:color .2s}
+.tb svg{width:26px;height:26px;transition:transform .35s cubic-bezier(.3,1.5,.4,1)}
+.tb:active svg{transform:scale(.86)}
+.tb[aria-selected="true"]{color:var(--c)}
+.tb[aria-selected="true"] svg{transform:scale(1.06)}
+
+.scrim{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.4);opacity:0;pointer-events:none}
+.scrim.on{pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;height:calc(100% - env(safe-area-inset-top,0px) - 12px);max-width:720px;margin:0 auto;background:var(--bg);border-radius:14px 14px 0 0;display:flex;flex-direction:column;transform:translateY(110%);box-shadow:0 -6px 30px rgba(0,0,0,.2)}
+.sheet[hidden]{display:none}
+.grab{touch-action:none;padding:6px 16px 10px;cursor:grab;flex:0 0 auto}
+.handle{width:36px;height:5px;border-radius:3px;background:var(--label3);margin:0 auto 10px}
+.sh-head{display:flex;align-items:center;gap:12px}
+.sh-head .ttl{flex:1;min-width:0}
+.sh-head .ttl b{display:block;font-size:20px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh-head .ttl small{font-size:13px;color:var(--label2)}
+.close{width:30px;height:30px;border-radius:50%;background:var(--fill);display:grid;place-items:center;color:var(--label2)}
+.close svg{width:12px;height:12px}
+.sbody{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:4px 16px calc(30px + env(safe-area-inset-bottom,0px))}
+.dprice{font-size:38px;font-weight:700;letter-spacing:-.01em;line-height:1.15;margin-top:4px}
+.dchg{font-size:15px;font-weight:600;margin:2px 0 14px}
+#chart{position:relative;height:240px;width:100%;margin-top:12px}
+.cmsg{font-size:13px;color:var(--label2);min-height:1.3em;margin-top:6px}
+.ftiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.ftile{border-radius:16px;padding:14px;background:linear-gradient(160deg,color-mix(in srgb,var(--tc) 22%,var(--card)),var(--card) 75%);border:1px solid color-mix(in srgb,var(--tc) 30%,transparent)}
+.ftile.up{--tc:var(--up)} .ftile.down{--tc:var(--down)}
+.ftile .fl{font-size:13px;font-weight:600;color:var(--label2)}
+.ftile .fdir{display:flex;align-items:center;gap:6px;font-size:19px;font-weight:700;color:var(--tc);margin-top:6px}
+.ftile .fdir svg{width:20px;height:20px}
+.ftile .fpct{font-size:40px;font-weight:700;letter-spacing:-.02em;line-height:1.05;margin-top:2px}
+.pbar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin-top:10px;background:var(--fill)}
+.pbar i{display:block;height:100%}
+.pbar .u{background:var(--up)} .pbar .d{background:var(--down)}
+.pleg{display:flex;justify-content:space-between;font-size:11px;color:var(--label2);margin-top:4px}
+.fmeta{font-size:12px;color:var(--label2);margin-top:10px;line-height:1.45}
+.fmeta b{color:var(--label);font-weight:600}
+.flist{list-style:none;margin:0;padding:0}
+.flist li{display:grid;grid-template-columns:22px 1fr;gap:8px;padding:9px 0;border-top:.5px solid var(--sep);font-size:14px;line-height:1.4}
+.flist li:first-child{border-top:0}
+.flist .dot{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;color:#fff;background:var(--label3)}
+.flist .dot.up{background:var(--up)} .flist .dot.down{background:var(--down)}
+
+@media (hover:hover) and (pointer:fine){
+  .row:hover{background:var(--fill)}
+  .more:hover{opacity:.75}
+}
+@media (prefers-reduced-motion: reduce){
+  .seg .thumb,.bar,.gauge .knob,.acc,.tb svg,.more svg{transition:none}
+  .live.on::before,.iconbtn.spin svg,.fl-up,.fl-down{animation:none}
+}
+@media (prefers-reduced-transparency: reduce){
+  .nav.solid,.tabbar{background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+</style>
+</head>
+<body data-tab="kripto">
+<div class="glow" aria-hidden="true"><i class="g-kripto on"></i><i class="g-fon"></i><i class="g-doviz"></i></div>
+
+<header class="nav" id="nav">
+  <div class="nav-in">
+    <span class="live" id="live">Bağlanıyor</span>
+    <span class="stitle" id="stitle">Kripto</span>
+    <button class="iconbtn" id="refresh" aria-label="Verileri yenile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
+  </div>
+</header>
+
+<main id="main">
+  <div class="lt"><h1 id="title">Kripto</h1></div>
+  <div class="upd" id="upd">Veriler yükleniyor…</div>
+  <div id="page"></div>
+</main>
+
+<nav class="tabbar" aria-label="Bölümler">
+  <div class="tabbar-in" role="tablist">
+    <button class="tb" role="tab" data-tab="kripto" style="--c:var(--kripto)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm3.9 11.7c0 1.9-1.4 2.8-3.3 2.9V18h-1.3v-1.4h-1V18H9v-1.4H7v-1.4h1V8.8H7V7.4h2V6h1.3v1.4h1V6h1.3v1.5c1.6.2 2.8 1 2.8 2.6 0 .9-.5 1.6-1.2 1.9.9.3 1.7 1 1.7 2.3ZM10 8.8v2.5h2c.9 0 1.5-.4 1.5-1.2s-.6-1.3-1.5-1.3h-2Zm2.3 3.9H10v2.5h2.3c1 0 1.7-.4 1.7-1.3 0-.8-.7-1.2-1.7-1.2Z"/></svg>Kripto</button>
+    <button class="tb" role="tab" data-tab="fon" style="--c:var(--fon)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 20h16a1 1 0 0 0 0-2H5V4a1 1 0 0 0-2 0v15a1 1 0 0 0 1 1Z"/><path d="M7 15.5a1 1 0 0 0 1.4 0l3.1-3.1 2.3 2.3a1 1 0 0 0 1.4 0l4.5-4.5V12a1 1 0 0 0 2 0V8a1 1 0 0 0-1-1h-4a1 1 0 0 0 0 2h1.6l-3.8 3.8-2.3-2.3a1 1 0 0 0-1.4 0L7 14.1a1 1 0 0 0 0 1.4Z"/></svg>Fonlar</button>
+    <button class="tb" role="tab" data-tab="doviz" style="--c:var(--doviz)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 13h6l1.6 5H2.9l1.6-5Zm9 0h6l1.6 5h-9.2l1.6-5ZM9 6h6l1.6 5H7.4L9 6Z"/></svg>Döviz &amp; Altın</button>
+  </div>
+</nav>
+
+<div class="scrim" id="scrim"></div>
+<section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sname" hidden>
+  <div class="grab" id="grab">
+    <div class="handle"></div>
+    <div class="sh-head">
+      <span class="ico" id="sico"></span>
+      <div class="ttl"><b id="sname">—</b><small id="ssub"></small></div>
+      <button class="close" id="sclose" aria-label="Kapat"><svg viewBox="0 0 12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></button>
+    </div>
+  </div>
+  <div class="sbody" id="sbody">
+    <div class="dprice num" id="dprice">—</div>
+    <div class="dchg num" id="dchg">&nbsp;</div>
+    <div id="ivs"></div>
+    <div id="chart" data-noswipe></div>
+    <div class="cmsg" id="cmsg"></div>
+    <div id="fc"></div>
+  </div>
+</section>
+
+<script>
+"use strict";
+const BN = "https://data-api.binance.vision/api/v3/klines";
+const IVMAP = {h1:"1h", h4:"4h", d1:"1d", w1:"1w"};
+const LIMIT = {h1:1000, h4:600, d1:1000, w1:300};
+const WINDOW = {h1:7*86400, h4:60*86400, d1:365*86400, w1:5.2*365*86400};
+const TR_OFFSET = 3*3600;
+const INTERVALS = [["h1","1 Saat"],["h4","4 Saat"],["d1","1 Gün"],["w1","1 Hafta"]];
+const PERIODS = [["1G","1G","1 gün"],["1H","1H","1 hafta"],["1A","1A","1 ay"],["3A","3A","3 ay"],["6A","6A","6 ay"],["YBB","YB","Yılbaşından bu yana"],["1Y","1Y","1 yıl"],["5Y","5Y","5 yıl"]];
+const ONS = 31.1034768;
+const WS = "wss://data-stream.binance.vision/stream?streams=" + ["btctry","ethtry","ethfitry","btcusdt","ethusdt","ethfiusdt","usdttry","eurusdt","paxgusdt"].map(s => s + "@miniTicker").join("/");
+const TABS = {
+  kripto:{title:"Kripto", fear:"kripto", fearTitle:"Kripto Korku Endeksi"},
+  fon:{title:"Fonlar", fear:"bist", fearTitle:"Borsa İstanbul Korku Endeksi"},
+  doviz:{title:"Döviz & Altın", fear:"altin", fearTitle:"Altın-Döviz Korku Endeksi"}
+};
+const ORDER = ["kripto","fon","doviz"];
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
+
+const assets = {};
+const groups = {kripto:[], fon:[], doviz:[]};
+function addAsset(a){ assets[a.id] = a; groups[a.group].push(a.id); }
+addAsset({id:"BTC", group:"kripto", kind:"bn", name:"Bitcoin", tl:"BTC/TL", us:"BTC/USD", sym:"BTCTRY", usdt:"BTCUSDT", color:"#f7931a", c1:"#ffbf47", ic:"₿"});
+addAsset({id:"ETH", group:"kripto", kind:"bn", name:"Ethereum", tl:"ETH/TL", us:"ETH/USD", sym:"ETHTRY", usdt:"ETHUSDT", color:"#627eea", c1:"#9aa9ff", ic:"Ξ"});
+addAsset({id:"ETHFI", group:"kripto", kind:"bn", name:"ether.fi", tl:"ETHFI/TL", us:"ETHFI/USD", sym:"ETHFITRY", usdt:"ETHFIUSDT", color:"#14b8a6", c1:"#6ee7d8", ic:"fi"});
+addAsset({id:"USD", group:"doviz", kind:"json", name:"Dolar", tl:"USD/TL", color:"#1fa855", c1:"#5be37f", ic:"$"});
+addAsset({id:"EUR", group:"doviz", kind:"json", name:"Euro", tl:"EUR/TL", color:"#007aff", c1:"#5ac8fa", ic:"€"});
+addAsset({id:"GRAM", group:"doviz", kind:"json", name:"Gram Altın", tl:"Gram / TL", color:"#e0a800", c1:"#ffe27a", ic:"Au"});
+
+function lsGet(k){ try { return localStorage.getItem(k); } catch(e) { return null; } }
+function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e) {} }
+
+const state = { tab: lsGet("tab") || "kripto", sel: "BTC", iv: "d1", per: lsGet("per") || "1Y", fund: lsGet("fund"), ccy: lsGet("ccy") || "TRY", open: false };
+if (!TABS[state.tab]) state.tab = "kripto";
+let DATA = {assets:{}, funds:{}};
+let FC = null;
+const $ = s => document.querySelector(s);
+function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+// ---------- yay (spring) animasyonu ----------
+function spring(o, target, set, opt = {}, done){
+  if (o.raf) cancelAnimationFrame(o.raf);
+  if (REDUCED.matches){ o.x = target; o.v = 0; set(target); o.raf = null; done && done(); return; }
+  const resp = opt.response || .4, damp = opt.damping == null ? 1 : opt.damping;
+  const k = (2*Math.PI/resp) ** 2, c = 4*Math.PI*damp/resp;
+  let x = o.x, v = opt.v != null ? opt.v : (o.v || 0), last = performance.now();
+  const step = now => {
+    const dt = Math.min(.034, (now - last)/1000); last = now;
+    for (let i = 0; i < 4; i++){ const h = dt/4, a = -k*(x - target) - c*v; v += a*h; x += v*h; }
+    o.x = x; o.v = v;
+    if (Math.abs(x - target) < .4 && Math.abs(v) < 8){ o.x = target; o.v = 0; set(target); o.raf = null; done && done(); return; }
+    set(x); o.raf = requestAnimationFrame(step);
+  };
+  o.raf = requestAnimationFrame(step);
+}
+function tracker(){
+  const h = [];
+  return { add(x){ const t = performance.now(); h.push([t, x]); while (h.length > 2 && t - h[0][0] > 100) h.shift(); },
+           vel(){ if (h.length < 2) return 0; const a = h[0], b = h[h.length-1]; return (b[1]-a[1]) / Math.max(1, b[0]-a[0]) * 1000; } };
+}
+
+// ---------- veri ----------
+const cache = new Map();
+function bn(sym, kind){
+  const key = sym + "|" + kind, c = cache.get(key);
+  if (c && Date.now() - c.at < 55000) return c.p;
+  const p = fetch(`${BN}?symbol=${sym}&interval=${IVMAP[kind]}&limit=${LIMIT[kind]}`)
+    .then(r => { if (!r.ok) throw new Error(sym + " " + r.status); return r.json(); })
+    .then(j => j.map(k => [Math.floor(k[0]/1000), parseFloat(k[4])]));
+  cache.set(key, {at: Date.now(), p});
+  p.catch(() => cache.delete(key));
+  return p;
+}
+async function cryptoSeries(a, kind){
+  try { const d = await bn(a.sym, kind); if (d.length > 1) return d; } catch(e) {}
+  const [x, u] = await Promise.all([bn(a.usdt, kind), bn("USDTTRY", kind)]);
+  const m = new Map(u);
+  return x.filter(p => m.has(p[0])).map(p => [p[0], p[1]*m.get(p[0])]);
+}
+function bucket(s, sec, off){
+  const out = [];
+  for (const p of s){
+    const b = Math.floor((p[0] + off)/sec), t = b*sec - off;
+    if (out.length && out[out.length-1][0] === t) out[out.length-1][1] = p[1];
+    else out.push([t, p[1]]);
+  }
+  return out;
+}
+async function getSeries(id, kind, ccy = "TRY"){
+  const a = assets[id]; if (!a) return null;
+  if (a.kind === "bn") return ccy === "USD" ? bn(a.usdt, kind) : cryptoSeries(a, kind);
+  const src = a.kind === "fund" ? DATA.funds[a.code] : DATA.assets[id];
+  if (!src) return null;
+  const h1 = src.h1 && src.h1.length > 1 ? src.h1 : null;
+  const d1 = src.d1 && src.d1.length > 1 ? src.d1 : null;
+  if (kind === "h1") return h1;
+  if (kind === "h4") return h1 && bucket(h1, 14400, 0);
+  if (kind === "d1") return d1;
+  if (kind === "w1") return d1 && bucket(d1, 604800, 3*86400);
+  return null;
+}
+function ccyOf(id){ return assets[id] && assets[id].group === "kripto" ? state.ccy : "TRY"; }
+async function current(id, ccy = "TRY"){
+  const lp = livePrice(id, ccy);
+  if (lp != null) return [Math.floor(Date.now()/1000), lp];
+  let s = null;
+  if (assets[id].kind !== "fund") s = await getSeries(id, "h1", ccy).catch(() => null);
+  if (!s || !s.length) s = await getSeries(id, "d1", ccy).catch(() => null);
+  return s && s.length ? s[s.length-1] : null;
+}
+function periodStart(p){
+  const now = Date.now()/1000, D = 86400;
+  switch (p){
+    case "1G": return now - D; case "1H": return now - 7*D; case "1A": return now - 30*D;
+    case "3A": return now - 91*D; case "6A": return now - 182*D; case "1Y": return now - 365*D; case "5Y": return now - 5*365*D;
+    case "YBB": { const y = new Date(Date.now() + TR_OFFSET*1000).getUTCFullYear(); return Date.UTC(y, 0, 1)/1000 - TR_OFFSET; }
+  }
+}
+function priceAt(s, t){
+  let lo = 0, hi = s.length - 1, ans = -1;
+  while (lo <= hi){ const m = (lo + hi) >> 1; if (s[m][0] <= t){ ans = m; lo = m + 1; } else hi = m - 1; }
+  if (ans < 0) return (s[0][0] - t < 6*86400) ? s[0][1] : null;
+  return s[ans][1];
+}
+async function startPrice(id, p, ccy){
+  const a = assets[id];
+  const short = p === "1G" || p === "1H";
+  const kind = (short && a.kind !== "fund") ? "h1" : (p === "5Y" && a.kind === "bn" ? "w1" : "d1");
+  let s = await getSeries(id, kind, ccy).catch(() => null);
+  if ((!s || s.length < 2) && kind === "h1") s = await getSeries(id, "d1", ccy).catch(() => null);
+  if (!s || s.length < 2) return null;
+  return priceAt(s, periodStart(p));
+}
+const ref1G = {};
+async function periodReturn(id, p, ccy = "TRY"){
+  const [start, cur] = await Promise.all([startPrice(id, p, ccy), current(id, ccy).catch(() => null)]);
+  if (!start || !cur) return null;
+  if (p === "1G") ref1G[id + "|" + ccy] = start;
+  return (cur[1]/start - 1)*100;
+}
+async function loadData(){
+  try {
+    const r = await fetch("data/market.json?v=" + Date.now(), {cache:"no-store"});
+    if (!r.ok) throw new Error(r.status);
+    DATA = await r.json();
+    DATA.assets = DATA.assets || {}; DATA.funds = DATA.funds || {};
+    $("#upd").textContent = "Döviz, altın, fon güncellemesi: " + fmtTime(DATA.updated);
+  } catch(e) {
+    $("#upd").textContent = "Döviz ve fon verisi alınamadı";
+  }
+  try { const r2 = await fetch("data/tahmin.json?v=" + Date.now(), {cache:"no-store"}); FC = r2.ok ? await r2.json() : null; } catch(e) { FC = null; }
+  if (!FC) FC = {assets:{}, fear:{}};
+  FC.assets = FC.assets || {}; FC.fear = FC.fear || {};
+  if (!FC.fear.kripto) await cryptoFearFallback();
+  groups.fon = [];
+  for (const code of Object.keys(DATA.funds)){
+    const id = "F:" + code;
+    assets[id] = {id, group:"fon", kind:"fund", code, name:code, tl:DATA.funds[code].name || "TEFAS fonu", color:"#af52de", c1:"#dc9bff", ic:code.slice(0,3)};
+    groups.fon.push(id);
+  }
+  if (!state.fund || !DATA.funds[state.fund]) state.fund = Object.keys(DATA.funds)[0] || null;
+}
+async function cryptoFearFallback(){
+  try {
+    const j = await fetch("https://api.alternative.me/fng/?limit=8").then(r => r.json());
+    const d = j.data.map(x => +x.value);
+    FC.fear.kripto = {value:d[0], label:fgLabel(d[0]), prev1:d[1], prev7:d[7], source:"alternative.me Kripto Korku & Açgözlülük Endeksi", computed:false, components:[]};
+  } catch(e) {}
+}
+
+// ---------- biçim ----------
+const nfCache = {};
+const nf = d => nfCache[d] || (nfCache[d] = new Intl.NumberFormat("tr-TR", {minimumFractionDigits:d, maximumFractionDigits:d}));
+function fmtPrice(v, ccy = "TRY"){ const d = v >= 10 ? 2 : v >= 1 ? 4 : 6; const s = nf(d).format(v); return ccy === "USD" ? "$" + s : s + " ₺"; }
+function fmtPct(v){ return (v > 0 ? "+" : v < 0 ? "−" : "") + "%" + nf(2).format(Math.abs(v)); }
+function cls(v){ return v > 0 ? "up" : v < 0 ? "down" : ""; }
+function css(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function fmtTime(iso){ return new Date(iso).toLocaleString("tr-TR", {timeZone:"Europe/Istanbul", day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"}); }
+function label(id){ const a = assets[id]; return a.kind === "fund" ? a.code + " fonu" : a.name; }
+function subOf(id){ const a = assets[id]; return a.group === "kripto" && state.ccy === "USD" ? a.us : a.tl; }
+function fgLabel(v){ return v < 25 ? "Aşırı korku" : v < 45 ? "Korku" : v <= 55 ? "Nötr" : v <= 75 ? "Açgözlülük" : "Aşırı açgözlülük"; }
+function fgColor(v){ return v < 25 ? "#ff3b30" : v < 45 ? "#ff9500" : v <= 55 ? "#ffcc00" : v <= 75 ? "#8fd14f" : "#34c759"; }
+function icon(id){
+  const a = assets[id], s = el("span", "ico", a.ic);
+  s.style.setProperty("--c1", a.c1); s.style.setProperty("--c2", a.color);
+  if (a.ic.length > 2) s.style.fontSize = "13px";
+  s.setAttribute("aria-hidden", "true");
+  return s;
+}
+const ARROW_UP = '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 3.5 16 11h-4v5.5H8V11H4z"/></svg>';
+const ARROW_DN = '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 16.5 4 9h4V3.5h4V9h4z"/></svg>';
+
+// ---------- segmentli kontrol ----------
+function segmented(opts, cur, onChange){
+  const box = el("div", "seg"); box.setAttribute("role", "tablist");
+  box.append(el("i", "thumb"));
+  box.style.setProperty("--n", opts.length);
+  const btns = opts.map(([k, t], i) => {
+    const b = el("button", null, t); b.type = "button";
+    b.onclick = () => { set(i); onChange(k); };
+    box.append(b); return b;
+  });
+  function set(i){ box.style.setProperty("--i", i); btns.forEach((b, j) => b.setAttribute("aria-pressed", i === j)); }
+  set(Math.max(0, opts.findIndex(o => o[0] === cur)));
+  return box;
+}
+
+// ---------- korku endeksi kartı ----------
+function gauge(v){
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", "0 0 200 118"); svg.setAttribute("class", "gauge");
+  svg.setAttribute("role", "img"); svg.setAttribute("aria-label", `Endeks ${v} / 100`);
+  const gid = "gg" + Math.random().toString(36).slice(2, 7);
+  svg.innerHTML = `<defs><linearGradient id="${gid}" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#ff3b30"/><stop offset=".3" stop-color="#ff9500"/><stop offset=".5" stop-color="#ffcc00"/><stop offset=".72" stop-color="#8fd14f"/><stop offset="1" stop-color="#34c759"/></linearGradient></defs>
+  <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#${gid})" stroke-width="14" stroke-linecap="round"/>
+  <g class="knob" style="transform-origin:100px 100px;transform:rotate(-90deg)"><circle cx="100" cy="20" r="10" fill="var(--card)" stroke="${fgColor(v)}" stroke-width="5"/></g>
+  <text x="100" y="104" text-anchor="middle" class="val">${Math.round(v)}</text>`;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    svg.querySelector(".knob").style.transform = `rotate(${-90 + v*1.8}deg)`;
+  }));
+  return svg;
+}
+function fearCard(tab){
+  const card = el("section", "card");
+  const f = FC && FC.fear && FC.fear[TABS[tab].fear];
+  const pad = el("div", "card-pad");
+  pad.append(el("h2", null, TABS[tab].fearTitle));
+  card.append(pad);
+  if (!f){
+    pad.append(el("p", "sub", "Endeks henüz hesaplanmadı. Saatlik güncellemeden sonra burada görünür."));
+    return card;
+  }
+  pad.append(el("p", "sub", "0 aşırı korku, 100 aşırı açgözlülük"));
+  const g = el("div", "fear"); g.style.marginTop = "10px";
+  g.append(gauge(f.value));
+  const r = el("div");
+  const l = el("div", "fear-l", f.label || fgLabel(f.value)); l.style.color = fgColor(f.value);
+  r.append(l);
+  const hist = el("div", "fear-hist");
+  for (const [t, v] of [["Dün", f.prev1], ["Geçen hafta", f.prev7]]){
+    if (v == null) continue;
+    const d = el("div"); const b = el("b", "num", String(v)); b.style.color = fgColor(v);
+    d.append(b, document.createTextNode(t)); hist.append(d);
+  }
+  r.append(hist);
+  g.append(r);
+  pad.append(g);
+  pad.append(el("div", "fear-src", f.computed ? `${f.source}. Hazır bir endeks olmadığı için program hesaplıyor.` : `Kaynak: ${f.source}.`));
+  if (f.components && f.components.length){
+    const btn = el("button", "more"); btn.type = "button"; btn.setAttribute("aria-expanded", "false");
+    btn.innerHTML = '<span>Neye göre hesaplanıyor?</span><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2l5 5-5 5"/></svg>';
+    const acc = el("div", "acc"), inner = el("div");
+    for (const c of f.components){
+      const row = el("div", "comp");
+      const h = el("div", "comp-h"); h.append(el("span", null, c.name)); const vv = el("span", "num", String(c.value)); vv.style.color = fgColor(c.value); h.append(vv);
+      const bar = el("div", "comp-bar"); const i = el("i"); i.style.width = c.value + "%"; i.style.background = fgColor(c.value); bar.append(i);
+      row.append(h, el("div", "comp-t", c.text), bar); inner.append(row);
+    }
+    acc.append(inner);
+    btn.onclick = () => { const o = acc.classList.toggle("open"); btn.setAttribute("aria-expanded", o); };
+    card.append(btn, acc);
+  }
+  return card;
+}
+
+// ---------- liste ----------
+function fcShort(id){
+  const f = FC && FC.assets && FC.assets[id] && FC.assets[id].h && FC.assets[id].h.d1;
+  if (!f) return null;
+  const up = f.p_up >= .5, pr = Math.round((up ? f.p_up : 1 - f.p_up)*100);
+  const s = el("span", "fct " + (up ? "up" : "down"), `Yarın ${up ? "↑" : "↓"} %${pr}`);
+  return s;
+}
+function listCard(tab){
+  const card = el("section", "card");
+  const ids = groups[tab];
+  if (!ids.length){ card.append(el("div", "empty", "Fon listesi boş. GitHub'daki fonlar.txt dosyasına fon kodlarını yaz; bir saat içinde burada görünür.")); return card; }
+  for (const id of ids){
+    const a = assets[id];
+    const b = el("button", "row"); b.type = "button"; b.dataset.id = id;
+    const nm = el("span", "nm"); nm.append(el("b", null, a.kind === "fund" ? a.code : a.name), el("small", null, subOf(id)));
+    const fc = fcShort(id); if (fc) nm.append(fc);
+    const sp = document.createElementNS("http://www.w3.org/2000/svg", "svg"); sp.setAttribute("class", "spark"); sp.setAttribute("viewBox", "0 0 60 30"); sp.setAttribute("aria-hidden", "true");
+    const pr = el("span", "pr"); pr.append(el("b", "p num", "…"), el("span", "pill num", "—"));
+    b.append(icon(id), nm, sp, pr);
+    b.onclick = () => openSheet(id);
+    card.append(b);
+    fillRow(b, id);
+  }
+  return card;
+}
+async function fillRow(b, id){
+  const ccy = ccyOf(id);
+  const [cur, ch] = await Promise.all([current(id, ccy).catch(() => null), periodReturn(id, "1G", ccy).catch(() => null)]);
+  b.querySelector(".p").textContent = cur ? fmtPrice(cur[1], ccy) : "veri yok";
+  const c = b.querySelector(".pill");
+  if (ch != null){ c.textContent = fmtPct(ch); c.className = "pill num " + cls(ch); }
+  drawSpark(b.querySelector(".spark"), id, ccy);
+}
+async function drawSpark(svg, id, ccy){
+  const isFund = assets[id].kind === "fund";
+  let s = await getSeries(id, isFund ? "d1" : "h1", ccy).catch(() => null);
+  if (!s || s.length < 2) return;
+  s = s.slice(isFund ? -30 : -25);
+  const vs = s.map(p => p[1]), mn = Math.min(...vs), mx = Math.max(...vs), rg = (mx - mn) || 1;
+  const pts = vs.map((v, i) => `${(i/(vs.length-1)*60).toFixed(1)},${(27 - (v - mn)/rg*24).toFixed(1)}`).join(" ");
+  const col = vs[vs.length-1] >= vs[0] ? "var(--up)" : "var(--down)";
+  svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
+}
+
+// ---------- kıyas ----------
+function compareSet(){
+  const set = ["GRAM","USD","EUR","BTC","ETH","ETHFI"];
+  if (state.fund && assets["F:" + state.fund]) set.push("F:" + state.fund);
+  return set;
+}
+function raceCard(){
+  const card = el("section", "card card-pad");
+  card.append(el("h2", null, "Kim daha çok kazandırdı?"));
+  const sub = el("p", "sub"); sub.id = "cmpsub"; card.append(sub);
+  const sg = segmented(PERIODS.map(p => [p[0], p[1]]), state.per, k => { state.per = k; lsSet("per", k); renderRace(); });
+  sg.style.marginTop = "12px";
+  card.append(sg);
+  const race = el("div", "race"); race.id = "race"; card.append(race);
+  return card;
+}
+let raceToken = 0;
+async function renderRace(){
+  const box = $("#race"); if (!box) return;
+  const token = ++raceToken, set = compareSet(), per = state.per;
+  $("#cmpsub").textContent = `${PERIODS.find(p => p[0] === per)[2]} içinde TL bazında getiri`;
+  if (box.dataset.key !== set.join()){
+    box.dataset.key = set.join(); box.innerHTML = "";
+    for (const id of set){
+      const r = el("div", "rrow"); r.dataset.id = id;
+      r.innerHTML = `<div class="lbl"></div><div class="track"><div class="zero"></div><div class="bar"></div></div><div class="val num na">…</div>`;
+      r.querySelector(".lbl").textContent = label(id);
+      box.append(r);
+    }
+  }
+  box.querySelectorAll(".rrow").forEach(r => r.classList.toggle("me", assets[r.dataset.id].group === state.tab));
+  const vals = await Promise.all(set.map(id => periodReturn(id, per, "TRY").catch(() => null)));
+  if (token !== raceToken || !box.isConnected) return;
+  const items = set.map((id, i) => ({id, v: vals[i]}));
+  items.sort((a, b) => (b.v ?? -Infinity) - (a.v ?? -Infinity));
+  const nums = items.filter(x => x.v != null).map(x => x.v);
+  const max = Math.max(0, ...nums), min = Math.min(0, ...nums), range = (max - min) || 1;
+  const zero = (-min/range)*100;
+  for (const it of items){
+    const r = box.querySelector(`[data-id="${CSS.escape(it.id)}"]`);
+    box.append(r);
+    const bar = r.querySelector(".bar"), val = r.querySelector(".val");
+    r.querySelector(".zero").style.left = `calc(${zero}% - 1px)`;
+    if (it.v == null){ bar.style.width = "0"; val.textContent = "veri yok"; val.className = "val num na"; continue; }
+    const w = Math.abs(it.v)/range*100;
+    bar.style.left = (it.v >= 0 ? zero : zero - w) + "%";
+    bar.style.width = Math.max(w, .6) + "%";
+    bar.style.background = `linear-gradient(90deg, ${assets[it.id].c1}, ${assets[it.id].color})`;
+    val.textContent = fmtPct(it.v); val.className = "val num " + cls(it.v);
+  }
+}
+
+// ---------- sayfa ----------
+function renderPage(){
+  const t = state.tab;
+  document.body.dataset.tab = t;
+  document.querySelectorAll(".glow i").forEach(i => i.classList.toggle("on", i.classList.contains("g-" + t)));
+  document.querySelectorAll(".tb").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+  $("#title").textContent = TABS[t].title; $("#stitle").textContent = TABS[t].title;
+  const pg = $("#page"); pg.innerHTML = "";
+  pg.append(fearCard(t));
+  if (t === "kripto"){
+    const w = el("div", "seg-wrap");
+    w.append(segmented([["TRY","Türk lirası ₺"],["USD","Dolar $"]], state.ccy, k => {
+      state.ccy = k; lsSet("ccy", k);
+      document.querySelectorAll(".row").forEach(b => { b.querySelector(".nm small").textContent = subOf(b.dataset.id); b.querySelector(".p").textContent = "…"; fillRow(b, b.dataset.id); });
+    }));
+    pg.append(w);
+  }
+  pg.append(listCard(t), raceCard());
+  pg.append(el("p", "note", "Kripto, döviz ve altın fiyatları saniyelik akar. Döviz ve altının canlı fiyatı Binance'ten hesaplanır ve her saat gerçek piyasa fiyatına göre ayarlanır; TEFAS fon fiyatları günde bir kez açıklanır. Gram altın, ons altın ve dolar kurundan hesaplanır, kuyumcu fiyatından biraz farklı olabilir. Yön tahminleri olasılıktır, yatırım tavsiyesi değildir."));
+  renderRace();
+}
+const pageAnim = {x: 0, v: 0, raf: null};
+function setPageX(x){ $("#page").style.transform = x ? `translate3d(${x}px,0,0)` : ""; pageAnim.x = x; }
+function goTab(t, dir, v0){
+  if (t === state.tab || !TABS[t]) { spring(pageAnim, 0, setPageX, {response:.35, damping:1, v:v0}); return; }
+  const W = innerWidth;
+  dir = dir || (ORDER.indexOf(t) > ORDER.indexOf(state.tab) ? -1 : 1);
+  spring(pageAnim, dir*W*.6, x => { setPageX(x); $("#page").style.opacity = 1 - Math.min(1, Math.abs(x)/(W*.6)); }, {response:.22, damping:1, v:v0}, () => {
+    state.tab = t; lsSet("tab", t);
+    scrollTo(0, 0);
+    renderPage();
+    pageAnim.x = -dir*W*.35; pageAnim.v = 0; setPageX(pageAnim.x);
+    spring(pageAnim, 0, x => { setPageX(x); $("#page").style.opacity = 1 - Math.min(1, Math.abs(x)/(W*.35)); }, {response:.38, damping:1});
+  });
+}
+document.querySelectorAll(".tb").forEach(b => b.onclick = () => goTab(b.dataset.tab));
+
+// sekmeler arası kaydırma
+let sw = null, swallowUntil = 0;
+const main = $("#main");
+main.addEventListener("pointerdown", e => {
+  if (state.open || (e.pointerType === "mouse" && e.button !== 0)) return;
+  if (e.target.closest("[data-noswipe]")) return;
+  sw = {x: e.clientX, y: e.clientY, id: e.pointerId, mode: null, tr: tracker()};
+});
+main.addEventListener("pointermove", e => {
+  if (!sw || e.pointerId !== sw.id) return;
+  const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+  if (!sw.mode){
+    if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)*1.3){ sw.mode = "h"; try { main.setPointerCapture(e.pointerId); } catch(_) {} if (pageAnim.raf) cancelAnimationFrame(pageAnim.raf); sw.base = pageAnim.x - dx; }
+    else if (Math.abs(dy) > 10){ sw = null; return; }
+    else return;
+  }
+  const i = ORDER.indexOf(state.tab);
+  let x = dx;
+  if ((dx > 0 && i === 0) || (dx < 0 && i === ORDER.length - 1)) x = Math.sign(dx) * Math.pow(Math.abs(dx), .7) * 1.6; // kenarda direnç
+  sw.tr.add(x); setPageX(x); $("#page").style.opacity = 1;
+});
+function endSwipe(e){
+  if (!sw || e.pointerId !== sw.id) return;
+  const s = sw; sw = null;
+  if (s.mode !== "h") return;
+  swallowUntil = Date.now() + 350;
+  const v = s.tr.vel(), x = pageAnim.x, W = innerWidth, i = ORDER.indexOf(state.tab);
+  const proj = x + v*.18;
+  if (proj < -W*.3 && i < ORDER.length - 1) goTab(ORDER[i+1], -1, v);
+  else if (proj > W*.3 && i > 0) goTab(ORDER[i-1], 1, v);
+  else spring(pageAnim, 0, setPageX, {response:.38, damping:.85, v});
+}
+main.addEventListener("pointerup", endSwipe);
+main.addEventListener("pointercancel", e => { if (sw && sw.mode === "h") endSwipe(e); else sw = null; });
+document.addEventListener("click", e => { if (Date.now() < swallowUntil){ e.stopPropagation(); e.preventDefault(); } }, true);
+
+// büyük başlık küçülmesi
+addEventListener("scroll", () => { $("#nav").classList.toggle("solid", scrollY > 34); }, {passive: true});
+
+// ---------- detay sayfası ----------
+const sheet = $("#sheet"), scrim = $("#scrim");
+const sh = {x: 0, v: 0, raf: null};
+let scrollSave = 0;
+function sheetH(){ return sheet.getBoundingClientRect().height || innerHeight; }
+function setSheetY(y){
+  sh.x = y;
+  const H = sheetH(), p = Math.max(0, Math.min(1, 1 - y/H));
+  sheet.style.transform = `translate3d(0,${Math.max(-40, y)}px,0)`;
+  scrim.style.opacity = p;
+  main.style.transformOrigin = `50% ${scrollY + innerHeight*.3}px`;
+  main.style.transform = p > 0.001 ? `scale(${1 - .06*p})` : "";
+  main.style.borderRadius = (14*p) + "px";
+  main.style.overflow = p > 0.001 ? "hidden" : "";
+}
+function openSheet(id){
+  if (!assets[id]) return;
+  state.sel = id;
+  if (assets[id].kind === "fund"){ state.fund = assets[id].code; lsSet("fund", state.fund); }
+  const a = assets[id];
+  const ic = $("#sico"); const ni = icon(id); ni.id = "sico"; ic.replaceWith(ni);
+  $("#sname").textContent = a.kind === "fund" ? a.code : a.name;
+  $("#ssub").textContent = subOf(id);
+  $("#dprice").textContent = "…"; $("#dchg").innerHTML = "&nbsp;";
+  renderIntervals(); renderForecast();
+  if (!state.open){
+    state.open = true;
+    document.documentElement.classList.add("sheet-open", "lock");
+    sheet.hidden = false; scrim.classList.add("on");
+    $("#sbody").scrollTop = 0;
+    sh.x = sheetH(); sh.v = 0; setSheetY(sh.x);
+    spring(sh, 0, setSheetY, {response:.42, damping:.88});
+  }
+  renderHeader();
+  requestAnimationFrame(() => drawChart());
+}
+function closeSheet(v0){
+  if (!state.open) return;
+  state.open = false;
+  scrim.classList.remove("on");
+  spring(sh, sheetH(), setSheetY, {response:.34, damping:1, v:v0}, () => {
+    sheet.hidden = true;
+    document.documentElement.classList.remove("sheet-open", "lock");
+    main.style.transform = ""; main.style.borderRadius = ""; main.style.overflow = "";
+  });
+}
+$("#sclose").onclick = () => closeSheet();
+scrim.onclick = () => closeSheet();
+addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
+let drag = null;
+$("#grab").addEventListener("pointerdown", e => {
+  if (e.target.closest("button")) return;
+  drag = {y: e.clientY, base: sh.x, tr: tracker()};
+  if (sh.raf) cancelAnimationFrame(sh.raf);
+  $("#grab").setPointerCapture(e.pointerId);
+});
+$("#grab").addEventListener("pointermove", e => {
+  if (!drag) return;
+  let y = drag.base + e.clientY - drag.y;
+  if (y < 0) y = -Math.pow(-y, .6); // yukarıda direnç
+  drag.tr.add(y); setSheetY(y);
+});
+$("#grab").addEventListener("pointerup", e => {
+  if (!drag) return;
+  const v = drag.tr.vel(); drag = null;
+  if (sh.x + v*.2 > sheetH()*.3) closeSheet(v);
+  else spring(sh, 0, setSheetY, {response:.4, damping:.85, v});
+});
+$("#grab").addEventListener("pointercancel", () => { if (drag){ drag = null; spring(sh, 0, setSheetY, {response:.4, damping:1}); } });
+
+function renderIntervals(){
+  const box = $("#ivs"); box.innerHTML = "";
+  const isFund = assets[state.sel].kind === "fund";
+  const opts = isFund ? INTERVALS.filter(i => i[0] === "d1" || i[0] === "w1") : INTERVALS;
+  if (!opts.some(o => o[0] === state.iv)) state.iv = "d1";
+  box.append(segmented(opts, state.iv, k => { state.iv = k; drawChart(); }));
+}
+async function renderHeader(){
+  const id = state.sel, ccy = ccyOf(id);
+  const [cur, ch] = await Promise.all([current(id, ccy).catch(() => null), periodReturn(id, "1G", ccy).catch(() => null)]);
+  if (id !== state.sel) return;
+  $("#dprice").textContent = cur ? fmtPrice(cur[1], ccy) : "veri yok";
+  const e = $("#dchg");
+  e.textContent = ch != null ? `${fmtPct(ch)} son 24 saat` : " ";
+  e.className = "dchg num " + cls(ch || 0);
+}
+
+let chart = null, area = null, chartToken = 0, chartLast = null;
+function ensureChart(){
+  if (chart || !window.LightweightCharts) return;
+  const box = $("#chart");
+  chart = LightweightCharts.createChart(box, {
+    width: box.clientWidth || 340, height: 240,
+    layout: { background: {type:"solid", color:"transparent"}, textColor: css("--label2"), fontFamily: "-apple-system, system-ui, sans-serif" },
+    grid: { vertLines: {visible:false}, horzLines: {color: css("--grid")} },
+    rightPriceScale: { borderVisible:false },
+    timeScale: { borderVisible:false, timeVisible:true, secondsVisible:false },
+    crosshair: { mode: 0 },
+    localization: { locale: "tr-TR", priceFormatter: v => { const d = Math.abs(v) >= 10 ? 2 : Math.abs(v) >= 1 ? 4 : 6; return nf(d).format(v); } },
+    handleScroll: { vertTouchDrag: false },
+    handleScale: { axisPressedMouseMove: false }
+  });
+  area = chart.addAreaSeries({ lineWidth: 2, priceLineVisible: false });
+  new ResizeObserver(() => { if (box.clientWidth) chart.applyOptions({ width: box.clientWidth }); }).observe(box);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    chart.applyOptions({ layout:{textColor:css("--label2")}, grid:{horzLines:{color:css("--grid")}} });
+    if (state.open) drawChart();
+  });
+}
+async function drawChart(){
+  ensureChart();
+  if (!chart){ $("#cmsg").textContent = "Grafik kütüphanesi yüklenemedi, internet bağlantını kontrol et."; return; }
+  const token = ++chartToken, id = state.sel, kind = state.iv, ccy = ccyOf(id);
+  $("#cmsg").textContent = "Grafik yükleniyor…";
+  let s = null;
+  try { s = await getSeries(id, kind, ccy); } catch(e) { s = null; }
+  if (token !== chartToken) return;
+  if (!s || s.length < 2){ chartLast = null; area.setData([]); $("#cmsg").textContent = "Bu aralık için veri yok."; return; }
+  const from = Date.now()/1000 - WINDOW[kind];
+  let v = s.filter(p => p[0] >= from); if (v.length < 2) v = s;
+  const ch = (v[v.length-1][1]/v[0][1] - 1)*100;
+  const col = ch >= 0 ? css("--up") : css("--down");
+  area.applyOptions({ lineColor: col, topColor: col + "55", bottomColor: col + "00" });
+  area.setData(v.map(p => ({ time: p[0] + TR_OFFSET, value: p[1] })));
+  chartLast = { id, kind, ccy, time: v[v.length-1][0] };
+  chart.applyOptions({ timeScale: { timeVisible: kind === "h1" || kind === "h4" } });
+  chart.timeScale().fitContent();
+  const span = {h1:"Son 7 gün, saatlik", h4:"Son 60 gün, 4 saatlik", d1:"Son 1 yıl, günlük", w1:"Son 5 yıl, haftalık"}[kind];
+  const m = $("#cmsg"); m.textContent = `${span}: `;
+  const b = el("b", cls(ch), fmtPct(ch)); m.append(b);
+}
+
+// ---------- yön tahmini ----------
+function dirTile(title, r){
+  const up = r.p_up >= .5, pr = Math.round((up ? r.p_up : 1 - r.p_up)*100), pu = Math.round(r.p_up*100);
+  const t = el("div", "ftile " + (up ? "up" : "down"));
+  t.append(el("div", "fl", title));
+  const d = el("div", "fdir"); d.innerHTML = (up ? ARROW_UP : ARROW_DN); d.append(document.createTextNode(up ? "Yukarı" : "Aşağı"));
+  t.append(d, el("div", "fpct num", "%" + pr));
+  const bar = el("div", "pbar"); const u = el("i", "u"); u.style.width = pu + "%"; const dn = el("i", "d"); dn.style.width = (100 - pu) + "%"; bar.append(u, dn);
+  const leg = el("div", "pleg"); leg.append(el("span", null, `↑ %${pu}`), el("span", null, `↓ %${100 - pu}`));
+  const meta = el("div", "fmeta");
+  meta.innerHTML = `Geçmiş isabet <b>%${Math.round(r.acc*100)}</b><br>Bu güçteki tahminler <b>%${Math.round(r.acc_like*100)}</b> tuttu`;
+  t.append(bar, leg, meta);
+  return t;
+}
+function renderForecast(){
+  const box = $("#fc"); box.innerHTML = "";
+  const id = state.sel, f = FC && FC.assets && FC.assets[id];
+  if (!f || !f.h || (!f.h.d1 && !f.h.w1)) return;
+  const sec = el("div", "sect", "Yön tahmini"); sec.style.margin = "26px 4px 0"; box.append(sec);
+  const tiles = el("div", "ftiles");
+  if (f.h.d1) tiles.append(dirTile("Yarın", f.h.d1));
+  if (f.h.w1) tiles.append(dirTile("Önümüzdeki 1 hafta", f.h.w1));
+  box.append(tiles);
+  const w = f.h.d1 || f.h.w1;
+  const info = el("p", "note");
+  info.style.margin = "10px 4px 0";
+  info.textContent = `${f.ccy === "USD" ? "Yön dolar bazında hesaplanır. " : "Yön TL bazında hesaplanır. "}Olasılıklar, modelin eğitimde görmediği ${w.from ? new Date(w.from).getFullYear() + " yılından bu yana" : "son dönemdeki"} günlerde ölçülen başarıya göre ayarlanır: %50'ye yakın değer zayıf, %60 ve üstü güçlü sinyaldir. Her gün aynı yönü söylemek %${Math.round(w.base*100)} tutardı. Son hesaplama ${fmtTime(FC.updated)}.`;
+  box.append(info);
+  if (f.factors && f.factors.length){
+    const s2 = el("div", "sect", "Göstergeler ne diyor?"); s2.style.margin = "22px 4px 7px"; box.append(s2);
+    const card = el("div", "card card-pad"); card.style.padding = "6px 16px";
+    const ul = el("ul", "flist");
+    for (const x of f.factors){
+      const li = el("li");
+      const t = typeof x === "string" ? {t:x, e:0} : x;
+      const dot = el("span", "dot " + (t.e > 0 ? "up" : t.e < 0 ? "down" : ""), t.e > 0 ? "▲" : t.e < 0 ? "▼" : "•");
+      li.append(dot, el("span", null, t.t)); ul.append(li);
+    }
+    card.append(ul); box.append(card);
+  }
+}
+
+// ---------- yenileme ----------
+async function refreshAll(full){
+  const btn = $("#refresh"); btn.classList.add("spin");
+  cache.clear();
+  if (full){ await loadData(); await calibrate().catch(() => {}); }
+  renderPage();
+  if (state.open){ await Promise.all([renderHeader(), drawChart()]); renderForecast(); }
+  btn.classList.remove("spin");
+}
+$("#refresh").onclick = () => refreshAll(true);
+let lastFull = Date.now();
+setInterval(() => {
+  if (document.hidden) return;
+  const full = Date.now() - lastFull > 10*60*1000; if (full) lastFull = Date.now();
+  if (!full){ document.querySelectorAll(".row").forEach(b => fillRow(b, b.dataset.id)); renderRace(); return; }
+  refreshAll(true);
+}, 300000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden){ lastFull = Date.now(); connect(); refreshAll(true); } });
+
+// ---------- canlı fiyat ----------
+const last = {}, calib = {};
+let ws = null, wsOpen = false, lastMsg = 0, retry = 0;
+function isLive(){ return wsOpen && Date.now() - lastMsg < 20000; }
+function derivedLive(id){
+  const u = last.USDTTRY; if (!u) return null;
+  if (id === "USD") return u;
+  if (id === "EUR") return last.EURUSDT ? last.EURUSDT*u : null;
+  if (id === "GRAM") return last.PAXGUSDT ? last.PAXGUSDT*u/ONS : null;
+  return null;
+}
+function livePrice(id, ccy = "TRY"){
+  const a = assets[id]; if (!a || !isLive()) return null;
+  if (a.kind === "bn"){
+    if (ccy === "USD") return last[a.usdt] || null;
+    if (last[a.sym]) return last[a.sym];
+    if (last[a.usdt] && last.USDTTRY) return last[a.usdt]*last.USDTTRY;
+    return null;
+  }
+  if (a.kind === "json"){ const d = derivedLive(id); return (d != null && calib[id]) ? d*calib[id] : null; }
+  return null;
+}
+async function calibrate(){
+  const [u, e, p] = await Promise.all([bn("USDTTRY","h1"), bn("EURUSDT","h1"), bn("PAXGUSDT","h1")]);
+  const mu = new Map(u), me = new Map(e), mp = new Map(p);
+  const f = { USD: t => mu.get(t), EUR: t => (me.has(t) && mu.has(t)) ? me.get(t)*mu.get(t) : null, GRAM: t => (mp.has(t) && mu.has(t)) ? mp.get(t)*mu.get(t)/ONS : null };
+  for (const id of ["USD","EUR","GRAM"]){
+    const h = DATA.assets[id] && DATA.assets[id].h1; if (!h || h.length < 2) continue;
+    for (let i = h.length - 2; i >= Math.max(0, h.length - 8); i--){ const d = f[id](h[i][0]); if (d){ calib[id] = h[i][1]/d; break; } }
+  }
+}
+function setLive(){
+  const e = $("#live"), on = isLive();
+  e.className = "live" + (on ? " on" : "");
+  e.textContent = on ? "Canlı" : "Bağlanıyor";
+}
+function connect(){
+  if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
+  try { ws = new WebSocket(WS); } catch(e) { return; }
+  ws.onopen = () => { retry = 0; };
+  ws.onmessage = ev => {
+    try { const m = JSON.parse(ev.data).data; if (m && m.s){ last[m.s] = parseFloat(m.c); lastMsg = Date.now(); wsOpen = true; schedule(); } } catch(e) {}
+  };
+  ws.onclose = () => { wsOpen = false; setLive(); if (!document.hidden) setTimeout(connect, Math.min(30000, 1000 * 2 ** retry++)); };
+  ws.onerror = () => { try { ws.close(); } catch(e) {} };
+}
+let pending = false;
+function schedule(){ if (pending) return; pending = true; setTimeout(() => { pending = false; tick(); }, 500); }
+const prevP = {};
+function setPrice(e, key, v, ccy){
+  const old = prevP[key]; prevP[key] = v;
+  e.textContent = fmtPrice(v, ccy);
+  if (old != null && v !== old){ e.classList.remove("fl-up", "fl-down"); void e.offsetWidth; e.classList.add(v > old ? "fl-up" : "fl-down"); }
+}
+function chgOf(id, ccy){ const r = ref1G[id + "|" + ccy], v = livePrice(id, ccy); return (!r || v == null) ? null : (v/r - 1)*100; }
+function tick(){
+  setLive();
+  document.querySelectorAll(".row").forEach(b => {
+    const id = b.dataset.id, ccy = ccyOf(id), v = livePrice(id, ccy); if (v == null) return;
+    setPrice(b.querySelector(".p"), "r:" + id + ccy, v, ccy);
+    const ch = chgOf(id, ccy);
+    if (ch != null){ const c = b.querySelector(".pill"); c.textContent = fmtPct(ch); c.className = "pill num " + cls(ch); }
+  });
+  if (!state.open) return;
+  const id = state.sel, ccy = ccyOf(id), v = livePrice(id, ccy);
+  if (v == null) return;
+  setPrice($("#dprice"), "d:" + id + ccy, v, ccy);
+  const ch = chgOf(id, ccy);
+  if (ch != null){ const e = $("#dchg"); e.textContent = `${fmtPct(ch)} son 24 saat`; e.className = "dchg num " + cls(ch); }
+  if (area && chartLast && chartLast.id === id && chartLast.ccy === ccy){
+    const sec = {h1:3600, h4:14400, d1:86400, w1:604800}[chartLast.kind], off = chartLast.kind === "w1" ? 3*86400 : 0;
+    let t = Math.floor((Date.now()/1000 + off)/sec)*sec - off;
+    if (t < chartLast.time) t = chartLast.time;
+    try { area.update({ time: t + TR_OFFSET, value: v }); chartLast.time = t; } catch(e) {}
+  }
+}
+setInterval(() => { if (!document.hidden && isLive()) renderRace(); }, 5000);
+
+connect();
+renderPage();
+refreshAll(true);
+</script>
+</body>
+</html>
