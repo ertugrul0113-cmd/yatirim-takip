@@ -11,6 +11,9 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f2f2f7">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
 <title>Yatırım Takip</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 :root{
@@ -33,6 +36,7 @@
 }
 body[data-tab="fon"]{--accent:var(--fon)}
 body[data-tab="doviz"]{--accent:var(--doviz)}
+body[data-tab="portfoy"]{--accent:var(--blue)}
 *{box-sizing:border-box}
 html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;background:var(--bg)}
 html.sheet-open{background:#000}
@@ -49,6 +53,7 @@ button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .g-kripto{background:radial-gradient(60% 70% at 15% 0%,rgba(255,149,0,.30),transparent 70%),radial-gradient(50% 60% at 95% 10%,rgba(255,45,85,.22),transparent 70%)}
 .g-fon{background:radial-gradient(60% 70% at 15% 0%,rgba(175,82,222,.30),transparent 70%),radial-gradient(50% 60% at 95% 10%,rgba(90,100,255,.22),transparent 70%)}
 .g-doviz{background:radial-gradient(60% 70% at 15% 0%,rgba(0,190,220,.28),transparent 70%),radial-gradient(50% 60% at 95% 10%,rgba(255,204,0,.24),transparent 70%)}
+.g-portfoy{background:radial-gradient(60% 70% at 15% 0%,rgba(10,132,255,.28),transparent 70%),radial-gradient(50% 60% at 95% 10%,rgba(52,199,89,.22),transparent 70%)}
 
 .nav{position:fixed;top:0;left:0;right:0;z-index:20;padding-top:env(safe-area-inset-top,0px);height:calc(44px + env(safe-area-inset-top,0px));display:flex;align-items:flex-end;transition:background-color .25s,box-shadow .25s}
 .nav-in{height:44px;width:100%;max-width:720px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 16px}
@@ -132,7 +137,7 @@ h2{font-size:20px;font-weight:700;margin:0;letter-spacing:.01em}
 .note{font-size:12px;color:var(--label2);line-height:1.5;margin:6px 6px 0}
 
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--barbg);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 -.5px 0 var(--sep);padding-bottom:env(safe-area-inset-bottom,0px)}
-.tabbar-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);height:50px}
+.tabbar-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);height:50px}
 .tb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;font-weight:500;color:var(--label2);transition:color .2s}
 .tb svg{width:26px;height:26px;transition:transform .35s cubic-bezier(.3,1.5,.4,1)}
 .tb:active svg{transform:scale(.86)}
@@ -175,6 +180,50 @@ h2{font-size:20px;font-weight:700;margin:0;letter-spacing:.01em}
 .flist .dot{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;color:#fff;background:var(--label3)}
 .flist .dot.up{background:var(--up)} .flist .dot.down{background:var(--down)}
 
+.ftile.weak{--tc:var(--label2)}
+.ftile.weak .fpct{color:var(--label2)}
+.track .infl{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed var(--label);opacity:.45;z-index:1;display:none}
+.rrow.inf .lbl{color:var(--label2)}
+.lgd{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--label2);margin-top:12px}
+.lgd i{width:0;height:12px;border-left:2px dashed var(--label);opacity:.6}
+
+/* formlar */
+.form{display:grid;gap:10px;padding:14px 16px;border-top:.5px solid var(--sep)}
+.form label{font-size:13px;font-weight:600;color:var(--label2);display:grid;gap:5px}
+.form input,.form select{font:inherit;font-size:16px;padding:11px 12px;border-radius:10px;border:0;background:var(--fill);color:var(--label);width:100%;-webkit-appearance:none;appearance:none}
+.form select{background-image:linear-gradient(45deg,transparent 50%,var(--label2) 50%),linear-gradient(135deg,var(--label2) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
+.form input:focus,.form select:focus{outline:2px solid var(--accent);outline-offset:0}
+.form .hint{font-size:13px;color:var(--label2);line-height:1.4;margin:0}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:block;width:100%;text-align:center;padding:12px;border-radius:12px;background:var(--accent);color:#fff;font-size:16px;font-weight:600;transition:opacity .15s}
+.btn:active{opacity:.7}
+.btn.sec{background:var(--fill);color:var(--accent)}
+.btn.danger{background:var(--fill);color:var(--down)}
+.addrow{display:flex;align-items:center;gap:10px;width:100%;padding:13px 16px;border-top:.5px solid var(--sep);font-size:16px;font-weight:500;color:var(--accent)}
+.addrow:first-child{border-top:0}
+.addrow b{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 16%,transparent);font-size:20px;font-weight:500}
+
+/* portföy */
+.ptotal{font-size:38px;font-weight:700;letter-spacing:-.01em;line-height:1.15;margin-top:6px}
+.pstats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.pstat{background:var(--fill);border-radius:12px;padding:10px 12px}
+.pstat small{display:block;font-size:12px;color:var(--label2);font-weight:600}
+.pstat b{display:block;font-size:17px;font-weight:700;margin-top:2px}
+.alloc{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-top:14px;background:var(--fill)}
+.alloc i{display:block;height:100%}
+.alegend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--label2)}
+.alegend span{display:inline-flex;align-items:center;gap:5px}
+.alegend span::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--dc)}
+.hrow{grid-template-columns:42px 1fr auto}
+.alrow{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:12px;padding:11px 16px;position:relative}
+.alrow+.alrow::before{content:"";position:absolute;top:0;left:70px;right:0;height:.5px;background:var(--sep)}
+.alrow.off{opacity:.5}
+.x{width:30px;height:30px;border-radius:50%;background:var(--fill);display:grid;place-items:center;color:var(--label2);font-size:15px}
+.toast{position:fixed;left:50%;bottom:calc(66px + env(safe-area-inset-bottom,0px));z-index:40;transform:translate(-50%,20px);opacity:0;pointer-events:none;max-width:min(92vw,520px);background:var(--card);color:var(--label);box-shadow:0 8px 30px rgba(0,0,0,.25);border-radius:14px;padding:12px 16px;font-size:15px;font-weight:500;transition:opacity .25s,transform .35s cubic-bezier(.3,1.3,.4,1)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+#sact{margin-top:22px}
+#sact .card{margin-bottom:12px}
+
 @media (hover:hover) and (pointer:fine){
   .row:hover{background:var(--fill)}
   .more:hover{opacity:.75}
@@ -189,7 +238,7 @@ h2{font-size:20px;font-weight:700;margin:0;letter-spacing:.01em}
 </style>
 </head>
 <body data-tab="kripto">
-<div class="glow" aria-hidden="true"><i class="g-kripto on"></i><i class="g-fon"></i><i class="g-doviz"></i></div>
+<div class="glow" aria-hidden="true"><i class="g-kripto on"></i><i class="g-fon"></i><i class="g-doviz"></i><i class="g-portfoy"></i></div>
 
 <header class="nav" id="nav">
   <div class="nav-in">
@@ -210,8 +259,10 @@ h2{font-size:20px;font-weight:700;margin:0;letter-spacing:.01em}
     <button class="tb" role="tab" data-tab="kripto" style="--c:var(--kripto)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm3.9 11.7c0 1.9-1.4 2.8-3.3 2.9V18h-1.3v-1.4h-1V18H9v-1.4H7v-1.4h1V8.8H7V7.4h2V6h1.3v1.4h1V6h1.3v1.5c1.6.2 2.8 1 2.8 2.6 0 .9-.5 1.6-1.2 1.9.9.3 1.7 1 1.7 2.3ZM10 8.8v2.5h2c.9 0 1.5-.4 1.5-1.2s-.6-1.3-1.5-1.3h-2Zm2.3 3.9H10v2.5h2.3c1 0 1.7-.4 1.7-1.3 0-.8-.7-1.2-1.7-1.2Z"/></svg>Kripto</button>
     <button class="tb" role="tab" data-tab="fon" style="--c:var(--fon)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 20h16a1 1 0 0 0 0-2H5V4a1 1 0 0 0-2 0v15a1 1 0 0 0 1 1Z"/><path d="M7 15.5a1 1 0 0 0 1.4 0l3.1-3.1 2.3 2.3a1 1 0 0 0 1.4 0l4.5-4.5V12a1 1 0 0 0 2 0V8a1 1 0 0 0-1-1h-4a1 1 0 0 0 0 2h1.6l-3.8 3.8-2.3-2.3a1 1 0 0 0-1.4 0L7 14.1a1 1 0 0 0 0 1.4Z"/></svg>Fonlar</button>
     <button class="tb" role="tab" data-tab="doviz" style="--c:var(--doviz)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 13h6l1.6 5H2.9l1.6-5Zm9 0h6l1.6 5h-9.2l1.6-5ZM9 6h6l1.6 5H7.4L9 6Z"/></svg>Döviz &amp; Altın</button>
+    <button class="tb" role="tab" data-tab="portfoy" style="--c:var(--blue)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 5.5A2.5 2.5 0 0 1 7.5 3h9a1 1 0 0 1 0 2h-9a.5.5 0 0 0 0 1H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a3 3 0 0 1-3-3V6.5c0-.2 0-.4.1-.6A2.5 2.5 0 0 1 5 5.5Zm11 7a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"/></svg>Portföyüm</button>
   </div>
 </nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <div class="scrim" id="scrim"></div>
 <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sname" hidden>
@@ -230,6 +281,7 @@ h2{font-size:20px;font-weight:700;margin:0;letter-spacing:.01em}
     <div id="chart" data-noswipe></div>
     <div class="cmsg" id="cmsg"></div>
     <div id="fc"></div>
+    <div id="sact" data-noswipe></div>
   </div>
 </section>
 
@@ -247,20 +299,29 @@ const WS = "wss://data-stream.binance.vision/stream?streams=" + ["btctry","ethtr
 const TABS = {
   kripto:{title:"Kripto", fear:"kripto", fearTitle:"Kripto Korku Endeksi"},
   fon:{title:"Fonlar", fear:"bist", fearTitle:"Borsa İstanbul Korku Endeksi"},
-  doviz:{title:"Döviz & Altın", fear:"altin", fearTitle:"Altın-Döviz Korku Endeksi"}
+  doviz:{title:"Döviz & Altın", fear:"altin", fearTitle:"Altın-Döviz Korku Endeksi"},
+  portfoy:{title:"Portföyüm"}
 };
-const ORDER = ["kripto","fon","doviz"];
+const ORDER = ["kripto","fon","doviz","portfoy"];
+const REPO = "ertugrul0113-cmd/yatirim-takip";
+const CEYREK_GR = 1.6035; // çeyrek altındaki saf altın: 1,75 g × 22 ayar (0,916)
+const TTL = {h1:10*60e3, h4:30*60e3, d1:6*3600e3, w1:6*3600e3}; // geçmiş veri önbellek süresi
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
 
 const assets = {};
 const groups = {kripto:[], fon:[], doviz:[]};
-function addAsset(a){ assets[a.id] = a; groups[a.group].push(a.id); }
+function addAsset(a){ assets[a.id] = a; if (groups[a.group]) groups[a.group].push(a.id); }
 addAsset({id:"BTC", group:"kripto", kind:"bn", name:"Bitcoin", tl:"BTC/TL", us:"BTC/USD", sym:"BTCTRY", usdt:"BTCUSDT", color:"#f7931a", c1:"#ffbf47", ic:"₿"});
 addAsset({id:"ETH", group:"kripto", kind:"bn", name:"Ethereum", tl:"ETH/TL", us:"ETH/USD", sym:"ETHTRY", usdt:"ETHUSDT", color:"#627eea", c1:"#9aa9ff", ic:"Ξ"});
 addAsset({id:"ETHFI", group:"kripto", kind:"bn", name:"ether.fi", tl:"ETHFI/TL", us:"ETHFI/USD", sym:"ETHFITRY", usdt:"ETHFIUSDT", color:"#14b8a6", c1:"#6ee7d8", ic:"fi"});
 addAsset({id:"USD", group:"doviz", kind:"json", name:"Dolar", tl:"USD/TL", color:"#1fa855", c1:"#5be37f", ic:"$"});
 addAsset({id:"EUR", group:"doviz", kind:"json", name:"Euro", tl:"EUR/TL", color:"#007aff", c1:"#5ac8fa", ic:"€"});
-addAsset({id:"GRAM", group:"doviz", kind:"json", name:"Gram Altın", tl:"Gram / TL", color:"#e0a800", c1:"#ffe27a", ic:"Au"});
+addAsset({id:"GRAM", group:"doviz", kind:"json", name:"Gram Altın", tl:"Gram / TL", color:"#e0a800", c1:"#ffe27a", ic:"Au", unit:"gr"});
+addAsset({id:"CEYREK", group:"doviz", kind:"json", base:"GRAM", mult:CEYREK_GR, name:"Çeyrek Altın", tl:"Has değer / TL", color:"#c98a00", c1:"#ffd25e", ic:"¼", unit:"adet"});
+addAsset({id:"GUMUS", group:"doviz", kind:"json", name:"Gram Gümüş", tl:"Gram / TL", color:"#8e8e93", c1:"#d8d8de", ic:"Ag", unit:"gr"});
+addAsset({id:"XU100", group:"fon", kind:"json", name:"BIST 100", tl:"Borsa İstanbul endeksi", color:"#e0245e", c1:"#ff7aa2", ic:"XU", noPf:true});
+addAsset({id:"INF", group:"none", kind:"cpi", name:"Enflasyon", color:"#8e8e93", c1:"#c7c7cc", ic:"%", noPf:true});
+assets.BTC.unit = "BTC"; assets.ETH.unit = "ETH"; assets.ETHFI.unit = "ETHFI"; assets.USD.unit = "$"; assets.EUR.unit = "€";
 
 function lsGet(k){ try { return localStorage.getItem(k); } catch(e) { return null; } }
 function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e) {} }
@@ -298,7 +359,7 @@ function tracker(){
 const cache = new Map();
 function bn(sym, kind){
   const key = sym + "|" + kind, c = cache.get(key);
-  if (c && Date.now() - c.at < 55000) return c.p;
+  if (c && Date.now() - c.at < TTL[kind]) return c.p;
   const p = fetch(`${BN}?symbol=${sym}&interval=${IVMAP[kind]}&limit=${LIMIT[kind]}`)
     .then(r => { if (!r.ok) throw new Error(sym + " " + r.status); return r.json(); })
     .then(j => j.map(k => [Math.floor(k[0]/1000), parseFloat(k[4])]));
@@ -321,10 +382,26 @@ function bucket(s, sec, off){
   }
   return out;
 }
+function srcOf(a){
+  if (a.kind === "fund") return DATA.funds[a.code];
+  const s = DATA.assets[a.base || a.id];
+  if (!s || !a.mult) return s;
+  if (!a._m || a._m.src !== s){ // çeyrek gibi türetilmiş varlıklar: taban serisi × katsayı
+    const m = x => x && x.map(p => [p[0], p[1]*a.mult]);
+    a._m = {src: s, val: {h1: m(s.h1), d1: m(s.d1)}};
+  }
+  return a._m.val;
+}
+function avail(id){
+  const a = assets[id]; if (!a) return false;
+  if (a.kind === "bn") return true;
+  if (a.kind === "cpi") return !!(DATA.cpi && DATA.cpi.length > 1);
+  return !!srcOf(a);
+}
 async function getSeries(id, kind, ccy = "TRY"){
-  const a = assets[id]; if (!a) return null;
+  const a = assets[id]; if (!a || a.kind === "cpi") return null;
   if (a.kind === "bn") return ccy === "USD" ? bn(a.usdt, kind) : cryptoSeries(a, kind);
-  const src = a.kind === "fund" ? DATA.funds[a.code] : DATA.assets[id];
+  const src = srcOf(a);
   if (!src) return null;
   const h1 = src.h1 && src.h1.length > 1 ? src.h1 : null;
   const d1 = src.d1 && src.d1.length > 1 ? src.d1 : null;
@@ -335,13 +412,45 @@ async function getSeries(id, kind, ccy = "TRY"){
   return null;
 }
 function ccyOf(id){ return assets[id] && assets[id].group === "kripto" ? state.ccy : "TRY"; }
+const known = {}; // son bilinen TL fiyatı (portföy ve alarmlar için)
 async function current(id, ccy = "TRY"){
   const lp = livePrice(id, ccy);
-  if (lp != null) return [Math.floor(Date.now()/1000), lp];
+  if (lp != null){ if (ccy === "TRY") known[id] = lp; return [Math.floor(Date.now()/1000), lp]; }
   let s = null;
   if (assets[id].kind !== "fund") s = await getSeries(id, "h1", ccy).catch(() => null);
   if (!s || !s.length) s = await getSeries(id, "d1", ccy).catch(() => null);
-  return s && s.length ? s[s.length-1] : null;
+  const r = s && s.length ? s[s.length-1] : null;
+  if (r && ccy === "TRY") known[id] = r[1];
+  return r;
+}
+// ---------- enflasyon (TÜFE) ----------
+let cpiK = null, cpiSrc = null;
+function cpiIndexAt(t){
+  const c = DATA.cpi; if (!c || c.length < 2) return null;
+  if (cpiSrc !== c){
+    let I = 1; cpiK = [];
+    for (const [ym, pct] of c){
+      const [y, m] = ym.split("-").map(Number);
+      cpiK.push({s: Date.UTC(y, m-1, 1)/1000 - TR_OFFSET, e: Date.UTC(y, m, 1)/1000 - TR_OFFSET, I0: I, r: 1 + pct/100});
+      I *= 1 + pct/100;
+    }
+    cpiSrc = c;
+  }
+  if (t < cpiK[0].s) return null;
+  const x = cpiK.find(k => t < k.e);
+  if (x) return x.I0 * Math.pow(x.r, (t - x.s)/(x.e - x.s));
+  // açıklanmamış aylar: son 3 ayın ortalama hızıyla tahmin
+  const L = cpiK[cpiK.length-1], r = Math.pow(cpiK.slice(-3).reduce((a, k) => a*k.r, 1), 1/3);
+  return L.I0 * L.r * Math.pow(r, (t - L.e)/(30.44*86400));
+}
+function cpiLast(){
+  const c = DATA.cpi; if (!c || !c.length) return "";
+  const [y, m] = c[c.length-1][0].split("-").map(Number);
+  return new Date(Date.UTC(y, m-1, 15)).toLocaleDateString("tr-TR", {month:"long", year:"numeric", timeZone:"UTC"});
+}
+function inflationReturn(p){
+  const a = cpiIndexAt(periodStart(p)), b = cpiIndexAt(Date.now()/1000);
+  return a && b ? (b/a - 1)*100 : null;
 }
 function periodStart(p){
   const now = Date.now()/1000, D = 86400;
@@ -359,6 +468,10 @@ function priceAt(s, t){
 }
 async function startPrice(id, p, ccy){
   const a = assets[id];
+  if (a.kind === "fund" && p === "1G"){ // fon fiyatı günde bir kez açıklanır: son fiyatı bir öncekiyle kıyasla
+    const s = await getSeries(id, "d1").catch(() => null);
+    return s && s.length > 1 ? s[s.length-2][1] : null;
+  }
   const short = p === "1G" || p === "1H";
   const kind = (short && a.kind !== "fund") ? "h1" : (p === "5Y" && a.kind === "bn" ? "w1" : "d1");
   let s = await getSeries(id, kind, ccy).catch(() => null);
@@ -368,6 +481,7 @@ async function startPrice(id, p, ccy){
 }
 const ref1G = {};
 async function periodReturn(id, p, ccy = "TRY"){
+  if (assets[id].kind === "cpi") return inflationReturn(p);
   const [start, cur] = await Promise.all([startPrice(id, p, ccy), current(id, ccy).catch(() => null)]);
   if (!start || !cur) return null;
   if (p === "1G") ref1G[id + "|" + ccy] = start;
@@ -387,10 +501,10 @@ async function loadData(){
   if (!FC) FC = {assets:{}, fear:{}};
   FC.assets = FC.assets || {}; FC.fear = FC.fear || {};
   if (!FC.fear.kripto) await cryptoFearFallback();
-  groups.fon = [];
+  groups.fon = groups.fon.filter(id => assets[id].kind !== "fund");
   for (const code of Object.keys(DATA.funds)){
     const id = "F:" + code;
-    assets[id] = {id, group:"fon", kind:"fund", code, name:code, tl:DATA.funds[code].name || "TEFAS fonu", color:"#af52de", c1:"#dc9bff", ic:code.slice(0,3)};
+    assets[id] = {id, group:"fon", kind:"fund", code, name:code, tl:DATA.funds[code].name || "TEFAS fonu", color:"#af52de", c1:"#dc9bff", ic:code.slice(0,3), unit:"pay"};
     groups.fon.push(id);
   }
   if (!state.fund || !DATA.funds[state.fund]) state.fund = Object.keys(DATA.funds)[0] || null;
@@ -500,17 +614,21 @@ function fearCard(tab){
 }
 
 // ---------- liste ----------
+// Tahmin, "her gün aynı yönü söyle" yönteminden belirgin şekilde iyi değilse zayıf sayılır.
+function fcStrong(r){ return Math.max(r.p_up, 1 - r.p_up) >= .55 && (r.acc_like - r.base) >= .02; }
+function fcUsdNote(id){ const f = FC && FC.assets && FC.assets[id]; return !!(f && f.ccy === "USD" && ccyOf(id) !== "USD"); }
 function fcShort(id){
   const f = FC && FC.assets && FC.assets[id] && FC.assets[id].h && FC.assets[id].h.d1;
-  if (!f) return null;
+  if (!f || !fcStrong(f)) return null;
   const up = f.p_up >= .5, pr = Math.round((up ? f.p_up : 1 - f.p_up)*100);
-  const s = el("span", "fct " + (up ? "up" : "down"), `Yarın ${up ? "↑" : "↓"} %${pr}`);
+  const s = el("span", "fct " + (up ? "up" : "down"), `Yarın ${up ? "↑" : "↓"} %${pr}${fcUsdNote(id) ? " ($ bazlı)" : ""}`);
   return s;
 }
 function listCard(tab){
   const card = el("section", "card");
-  const ids = groups[tab];
-  if (!ids.length){ card.append(el("div", "empty", "Fon listesi boş. GitHub'daki fonlar.txt dosyasına fon kodlarını yaz; bir saat içinde burada görünür.")); return card; }
+  const ids = groups[tab].filter(avail);
+  const hasFund = ids.some(id => assets[id].kind === "fund");
+  if (tab === "fon" && !hasFund) card.append(el("div", "empty", "Henüz fon eklenmedi. Aşağıdaki düğmeyle TEFAS fon kodu ekleyebilirsin."));
   for (const id of ids){
     const a = assets[id];
     const b = el("button", "row"); b.type = "button"; b.dataset.id = id;
@@ -523,6 +641,7 @@ function listCard(tab){
     card.append(b);
     fillRow(b, id);
   }
+  if (tab === "fon") card.append(fundAdder());
   return card;
 }
 async function fillRow(b, id){
@@ -531,24 +650,35 @@ async function fillRow(b, id){
   b.querySelector(".p").textContent = cur ? fmtPrice(cur[1], ccy) : "veri yok";
   const c = b.querySelector(".pill");
   if (ch != null){ c.textContent = fmtPct(ch); c.className = "pill num " + cls(ch); }
-  drawSpark(b.querySelector(".spark"), id, ccy);
+  drawSpark(b.querySelector(".spark"), id, ccy, ch);
 }
-async function drawSpark(svg, id, ccy){
+// Küçük grafik, yanındaki yüzde ile aynı dönemi (son 24 saat) ve aynı fiyatı gösterir.
+async function drawSpark(svg, id, ccy, ch){
   const isFund = assets[id].kind === "fund";
   let s = await getSeries(id, isFund ? "d1" : "h1", ccy).catch(() => null);
   if (!s || s.length < 2) return;
-  s = s.slice(isFund ? -30 : -25);
+  if (isFund) s = s.slice(-30);
+  else {
+    const t0 = periodStart("1G"), ref = ref1G[id + "|" + ccy];
+    let w = s.filter(p => p[0] >= t0);
+    if (w.length < 6) w = s.slice(-25);
+    else if (ref != null) w = [[t0, ref], ...w];
+    const lp = livePrice(id, ccy);
+    if (lp != null) w = w.concat([[Date.now()/1000, lp]]);
+    s = w;
+  }
   const vs = s.map(p => p[1]), mn = Math.min(...vs), mx = Math.max(...vs), rg = (mx - mn) || 1;
   const pts = vs.map((v, i) => `${(i/(vs.length-1)*60).toFixed(1)},${(27 - (v - mn)/rg*24).toFixed(1)}`).join(" ");
-  const col = vs[vs.length-1] >= vs[0] ? "var(--up)" : "var(--down)";
-  svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const dir = (!isFund && ch != null) ? ch : vs[vs.length-1] - vs[0];
+  svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="${dir >= 0 ? "var(--up)" : "var(--down)"}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
 }
 
 // ---------- kıyas ----------
 function compareSet(){
-  const set = ["GRAM","USD","EUR","BTC","ETH","ETHFI"];
+  const set = ["GRAM","GUMUS","USD","EUR","XU100","BTC","ETH","ETHFI"];
   if (state.fund && assets["F:" + state.fund]) set.push("F:" + state.fund);
-  return set;
+  set.push("INF");
+  return set.filter(avail);
 }
 function raceCard(){
   const card = el("section", "card card-pad");
@@ -558,6 +688,9 @@ function raceCard(){
   sg.style.marginTop = "12px";
   card.append(sg);
   const race = el("div", "race"); race.id = "race"; card.append(race);
+  const lg = el("div", "lgd"); lg.id = "inflg"; lg.hidden = true;
+  lg.append(el("i"), el("span"));
+  card.append(lg);
   return card;
 }
 let raceToken = 0;
@@ -569,8 +702,9 @@ async function renderRace(){
     box.dataset.key = set.join(); box.innerHTML = "";
     for (const id of set){
       const r = el("div", "rrow"); r.dataset.id = id;
-      r.innerHTML = `<div class="lbl"></div><div class="track"><div class="zero"></div><div class="bar"></div></div><div class="val num na">…</div>`;
+      r.innerHTML = `<div class="lbl"></div><div class="track"><div class="zero"></div><div class="infl"></div><div class="bar"></div></div><div class="val num na">…</div>`;
       r.querySelector(".lbl").textContent = label(id);
+      if (id === "INF") r.classList.add("inf");
       box.append(r);
     }
   }
@@ -582,17 +716,30 @@ async function renderRace(){
   const nums = items.filter(x => x.v != null).map(x => x.v);
   const max = Math.max(0, ...nums), min = Math.min(0, ...nums), range = (max - min) || 1;
   const zero = (-min/range)*100;
+  const inf = items.find(x => x.id === "INF"), infV = inf ? inf.v : null;
+  const infX = infV != null ? ((infV - min)/range)*100 : null;
   for (const it of items){
     const r = box.querySelector(`[data-id="${CSS.escape(it.id)}"]`);
     box.append(r);
     const bar = r.querySelector(".bar"), val = r.querySelector(".val");
     r.querySelector(".zero").style.left = `calc(${zero}% - 1px)`;
+    const il = r.querySelector(".infl");
+    il.style.display = infX != null && it.id !== "INF" ? "block" : "none";
+    if (infX != null) il.style.left = `calc(${infX}% - 1px)`;
     if (it.v == null){ bar.style.width = "0"; val.textContent = "veri yok"; val.className = "val num na"; continue; }
     const w = Math.abs(it.v)/range*100;
     bar.style.left = (it.v >= 0 ? zero : zero - w) + "%";
     bar.style.width = Math.max(w, .6) + "%";
     bar.style.background = `linear-gradient(90deg, ${assets[it.id].c1}, ${assets[it.id].color})`;
-    val.textContent = fmtPct(it.v); val.className = "val num " + cls(it.v);
+    val.textContent = fmtPct(it.v); val.className = "val num " + (it.id === "INF" ? "na" : cls(it.v));
+  }
+  const lg = $("#inflg");
+  if (lg){
+    lg.hidden = infV == null;
+    if (infV != null){
+      const beat = items.filter(x => x.id !== "INF" && x.v != null && x.v > infV).length;
+      lg.querySelector("span").textContent = `Kesikli çizgi enflasyon (${fmtPct(infV)}). Çizginin sağındaki ${beat} varlık enflasyonu yendi. TÜFE: TÜİK, son açıklanan ${cpiLast()}; sonrası tahmini.`;
+    }
   }
 }
 
@@ -604,6 +751,7 @@ function renderPage(){
   document.querySelectorAll(".tb").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
   $("#title").textContent = TABS[t].title; $("#stitle").textContent = TABS[t].title;
   const pg = $("#page"); pg.innerHTML = "";
+  if (t === "portfoy"){ renderPortfolioPage(pg); return; }
   pg.append(fearCard(t));
   if (t === "kripto"){
     const w = el("div", "seg-wrap");
@@ -614,7 +762,7 @@ function renderPage(){
     pg.append(w);
   }
   pg.append(listCard(t), raceCard());
-  pg.append(el("p", "note", "Kripto, döviz ve altın fiyatları saniyelik akar. Döviz ve altının canlı fiyatı Binance'ten hesaplanır ve her saat gerçek piyasa fiyatına göre ayarlanır; TEFAS fon fiyatları günde bir kez açıklanır. Gram altın, ons altın ve dolar kurundan hesaplanır, kuyumcu fiyatından biraz farklı olabilir. Yön tahminleri olasılıktır, yatırım tavsiyesi değildir."));
+  pg.append(el("p", "note", "Kripto, döviz ve altın fiyatları saniyelik akar. Döviz ve altının canlı fiyatı Binance'ten hesaplanır ve her saat gerçek piyasa fiyatına göre ayarlanır; TEFAS fon fiyatları günde bir kez açıklanır. Gram altın ve gümüş, ons fiyatı ve dolar kurundan hesaplanır; çeyrek altın içindeki saf altının değeridir (1,6035 gram). Kuyumcu fiyatları işçilik ve makas yüzünden farklı olabilir. Gümüş ve BIST 100 saatlik güncellenir. Yön tahminleri olasılıktır, yatırım tavsiyesi değildir; zayıf sinyaller listede gösterilmez."));
   renderRace();
 }
 const pageAnim = {x: 0, v: 0, raf: null};
@@ -696,7 +844,7 @@ function openSheet(id){
   $("#sname").textContent = a.kind === "fund" ? a.code : a.name;
   $("#ssub").textContent = subOf(id);
   $("#dprice").textContent = "…"; $("#dchg").innerHTML = "&nbsp;";
-  renderIntervals(); renderForecast();
+  renderIntervals(); renderForecast(); renderSheetActions();
   if (!state.open){
     state.open = true;
     document.documentElement.classList.add("sheet-open", "lock");
@@ -807,14 +955,17 @@ async function drawChart(){
 // ---------- yön tahmini ----------
 function dirTile(title, r){
   const up = r.p_up >= .5, pr = Math.round((up ? r.p_up : 1 - r.p_up)*100), pu = Math.round(r.p_up*100);
-  const t = el("div", "ftile " + (up ? "up" : "down"));
+  const strong = fcStrong(r);
+  const t = el("div", "ftile " + (strong ? (up ? "up" : "down") : "weak"));
   t.append(el("div", "fl", title));
-  const d = el("div", "fdir"); d.innerHTML = (up ? ARROW_UP : ARROW_DN); d.append(document.createTextNode(up ? "Yukarı" : "Aşağı"));
+  const d = el("div", "fdir");
+  if (strong){ d.innerHTML = (up ? ARROW_UP : ARROW_DN); d.append(document.createTextNode(up ? "Yukarı" : "Aşağı")); }
+  else d.textContent = "Sinyal zayıf";
   t.append(d, el("div", "fpct num", "%" + pr));
   const bar = el("div", "pbar"); const u = el("i", "u"); u.style.width = pu + "%"; const dn = el("i", "d"); dn.style.width = (100 - pu) + "%"; bar.append(u, dn);
   const leg = el("div", "pleg"); leg.append(el("span", null, `↑ %${pu}`), el("span", null, `↓ %${100 - pu}`));
   const meta = el("div", "fmeta");
-  meta.innerHTML = `Geçmiş isabet <b>%${Math.round(r.acc*100)}</b><br>Bu güçteki tahminler <b>%${Math.round(r.acc_like*100)}</b> tuttu`;
+  meta.innerHTML = `Geçmiş isabet <b>%${Math.round(r.acc*100)}</b><br>Bu güçteki tahminler <b>%${Math.round(r.acc_like*100)}</b> tuttu<br>Hep aynı yönü söylemek <b>%${Math.round(r.base*100)}</b> tutardı`;
   t.append(bar, leg, meta);
   return t;
 }
@@ -824,13 +975,15 @@ function renderForecast(){
   if (!f || !f.h || (!f.h.d1 && !f.h.w1)) return;
   const sec = el("div", "sect", "Yön tahmini"); sec.style.margin = "26px 4px 0"; box.append(sec);
   const tiles = el("div", "ftiles");
-  if (f.h.d1) tiles.append(dirTile("Yarın", f.h.d1));
-  if (f.h.w1) tiles.append(dirTile("Önümüzdeki 1 hafta", f.h.w1));
+  const sfx = fcUsdNote(id) ? " ($ bazında)" : "";
+  if (f.h.d1) tiles.append(dirTile("Yarın" + sfx, f.h.d1));
+  if (f.h.w1) tiles.append(dirTile("Önümüzdeki 1 hafta" + sfx, f.h.w1));
   box.append(tiles);
   const w = f.h.d1 || f.h.w1;
   const info = el("p", "note");
   info.style.margin = "10px 4px 0";
-  info.textContent = `${f.ccy === "USD" ? "Yön dolar bazında hesaplanır. " : "Yön TL bazında hesaplanır. "}Olasılıklar, modelin eğitimde görmediği ${w.from ? new Date(w.from).getFullYear() + " yılından bu yana" : "son dönemdeki"} günlerde ölçülen başarıya göre ayarlanır: %50'ye yakın değer zayıf, %60 ve üstü güçlü sinyaldir. Her gün aynı yönü söylemek %${Math.round(w.base*100)} tutardı. Son hesaplama ${fmtTime(FC.updated)}.`;
+  const weak = [f.h.d1, f.h.w1].some(r => r && !fcStrong(r)) ? "\"Sinyal zayıf\" yazan tahmin, her gün aynı yönü söylemekten belirgin şekilde daha isabetli değildir; ona göre karar verme. " : "";
+  info.textContent = `${weak}${f.ccy === "USD" ? "Yön dolar bazında hesaplanır. " : "Yön TL bazında hesaplanır. "}Olasılıklar, modelin eğitimde görmediği ${w.from ? new Date(w.from).getFullYear() + " yılından bu yana" : "son dönemdeki"} günlerde ölçülen başarıya göre ayarlanır: %50'ye yakın değer zayıf, %60 ve üstü güçlü sinyaldir. Her gün aynı yönü söylemek %${Math.round(w.base*100)} tutardı. Son hesaplama ${fmtTime(FC.updated)}.`;
   box.append(info);
   if (f.factors && f.factors.length){
     const s2 = el("div", "sect", "Göstergeler ne diyor?"); s2.style.margin = "22px 4px 7px"; box.append(s2);
@@ -852,6 +1005,7 @@ async function refreshAll(full){
   cache.clear();
   if (full){ await loadData(); await calibrate().catch(() => {}); }
   renderPage();
+  refreshKnown();
   if (state.open){ await Promise.all([renderHeader(), drawChart()]); renderForecast(); }
   btn.classList.remove("spin");
 }
@@ -884,7 +1038,7 @@ function livePrice(id, ccy = "TRY"){
     if (last[a.usdt] && last.USDTTRY) return last[a.usdt]*last.USDTTRY;
     return null;
   }
-  if (a.kind === "json"){ const d = derivedLive(id); return (d != null && calib[id]) ? d*calib[id] : null; }
+  if (a.kind === "json"){ const b = a.base || id, d = derivedLive(b); return (d != null && calib[b]) ? d*calib[b]*(a.mult || 1) : null; }
   return null;
 }
 async function calibrate(){
@@ -926,8 +1080,14 @@ function tick(){
     const id = b.dataset.id, ccy = ccyOf(id), v = livePrice(id, ccy); if (v == null) return;
     setPrice(b.querySelector(".p"), "r:" + id + ccy, v, ccy);
     const ch = chgOf(id, ccy);
-    if (ch != null){ const c = b.querySelector(".pill"); c.textContent = fmtPct(ch); c.className = "pill num " + cls(ch); }
+    if (ch != null){
+      const c = b.querySelector(".pill"); c.textContent = fmtPct(ch); c.className = "pill num " + cls(ch);
+      const pl = b.querySelector(".spark polyline"); if (pl) pl.setAttribute("stroke", ch >= 0 ? "var(--up)" : "var(--down)");
+    }
   });
+  for (const id of Object.keys(assets)){ const v = livePrice(id, "TRY"); if (v != null) known[id] = v; }
+  if (state.tab === "portfoy") updatePortfolio();
+  checkAlarms();
   if (!state.open) return;
   const id = state.sel, ccy = ccyOf(id), v = livePrice(id, ccy);
   if (v == null) return;
@@ -942,6 +1102,275 @@ function tick(){
   }
 }
 setInterval(() => { if (!document.hidden && isLive()) renderRace(); }, 5000);
+
+// ---------- ortak yardımcılar ----------
+function parseNum(s){
+  s = String(s == null ? "" : s).trim().replace(/[\s₺$€]/g, "");
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");          // 1.234,56
+  else if (/^[1-9]\d{0,2}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");    // 60.000 (binlik nokta)
+  if (!/^-?\d*\.?\d+$/.test(s)) return NaN;
+  const v = parseFloat(s); return isFinite(v) ? v : NaN;
+}
+function fmtQty(v){ return new Intl.NumberFormat("tr-TR", {maximumFractionDigits: 8}).format(v); }
+function fmtSigned(v){ return (v >= 0 ? "+" : "−") + fmtPrice(Math.abs(v)); }
+function unitOf(id){ return assets[id].unit || "adet"; }
+function lsJSON(k, d){ try { const v = JSON.parse(lsGet(k)); return Array.isArray(v) ? v : d; } catch(e) { return d; } }
+let toastT = 0;
+function toast(msg, ms = 3500){ const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), ms); }
+function field(lbl, val, ph, mode = "decimal"){
+  const l = el("label"), i = el("input");
+  i.type = "text"; i.inputMode = mode; i.autocomplete = "off"; i.value = val == null ? "" : val;
+  if (ph) i.placeholder = ph;
+  l.append(document.createTextNode(lbl), i); return [l, i];
+}
+function button(cls, text, fn){ const b = el("button", cls, text); b.type = "button"; b.onclick = fn; return b; }
+function addRow(text, fn){ const b = button("addrow", null, fn); b.innerHTML = "<b>+</b>"; b.append(document.createTextNode(text)); return b; }
+function assetSelect(cur, withIndex){
+  const s = el("select");
+  for (const [g, t] of [["kripto","Kripto"],["doviz","Döviz & Altın"],["fon","Fonlar & Borsa"]]){
+    const og = document.createElement("optgroup"); og.label = t;
+    for (const id of groups[g]){
+      if (!avail(id) || (!withIndex && assets[id].noPf)) continue;
+      const o = el("option", null, label(id)); o.value = id; if (id === cur) o.selected = true; og.append(o);
+    }
+    if (og.children.length) s.append(og);
+  }
+  return s;
+}
+
+// ---------- portföy ----------
+let pf = lsJSON("pf", []); // [{id, qty, cost}] — sadece bu cihazda saklanır
+let pfEdit = null, pfPreset = null; // null: form kapalı, -1: yeni, n: düzenle
+function savePf(){ lsSet("pf", JSON.stringify(pf)); }
+function renderPortfolioPage(pg){
+  if (pf.length){
+    const sum = el("section", "card card-pad");
+    sum.append(el("p", "sub", "Toplam değer"));
+    const tot = el("div", "ptotal num", "…"); tot.id = "pftot"; sum.append(tot);
+    const st = el("div", "pstats");
+    st.innerHTML = `<div class="pstat"><small>Bugün</small><b class="num" id="pfday">—</b></div><div class="pstat"><small>Toplam kâr/zarar</small><b class="num" id="pfpl">—</b></div>`;
+    const al = el("div", "alloc"); al.id = "pfalloc";
+    const lg = el("div", "alegend"); lg.id = "pflg";
+    sum.append(st, al, lg);
+    pg.append(sum);
+  }
+  const s1 = el("div", "sect", "Varlıklarım"); pg.append(s1);
+  const hold = el("section", "card");
+  if (!pf.length && pfEdit == null) hold.append(el("div", "empty", "Portföyün boş. Elindeki altını, dövizi, kriptoyu veya fonu ekle; toplam değerini ve kâr/zararını canlı takip et. Bilgiler sadece bu telefonda saklanır."));
+  pf.forEach((x, i) => {
+    if (!assets[x.id]) return;
+    const b = el("button", "row hrow"); b.type = "button"; b.dataset.i = i;
+    const nm = el("span", "nm"); nm.append(el("b", null, label(x.id)), el("small", null, `${fmtQty(x.qty)} ${unitOf(x.id)}`));
+    const pr = el("span", "pr"); pr.append(el("b", "p num", "…"), el("span", "pill num", "—"));
+    b.append(icon(x.id), nm, pr);
+    b.onclick = () => { pfEdit = pfEdit === i ? null : i; renderPage(); };
+    hold.append(b);
+    if (pfEdit === i) hold.append(pfForm(i));
+  });
+  if (pfEdit === -1) hold.append(pfForm(-1));
+  else hold.append(addRow("Varlık ekle", () => { pfEdit = -1; renderPage(); }));
+  pg.append(hold);
+  pg.append(el("div", "sect", "Fiyat alarmları"), alarmCard());
+  pg.append(el("p", "note", "Değerler canlı fiyatla hesaplanır. Kâr/zarar için toplam alış maliyetini TL olarak gir. Portföy ve alarmlar sadece bu cihazın tarayıcısında saklanır; başka biri göremez."));
+  loadPf();
+}
+function pfForm(i){
+  const it = i >= 0 ? pf[i] : {id: pfPreset || "GRAM", qty: null, cost: null};
+  pfPreset = null;
+  const f = el("div", "form"); f.dataset.noswipe = "";
+  const ls = el("label", null, "Varlık"), sel = assetSelect(it.id); ls.append(sel);
+  const [lq, q] = field("", it.qty != null ? String(it.qty).replace(".", ",") : "", "Örn. 10");
+  const [lc, c] = field("Toplam alış maliyeti ₺ (isteğe bağlı)", it.cost != null ? String(it.cost).replace(".", ",") : "", "Örn. 25000");
+  const setUnit = () => { lq.firstChild.textContent = `Miktar (${unitOf(sel.value)})`; };
+  sel.onchange = setUnit; setUnit();
+  const save = button("btn", "Kaydet", () => {
+    const qty = parseNum(q.value), cost = c.value.trim() ? parseNum(c.value) : null;
+    if (!(qty > 0)) return toast("Geçerli bir miktar yaz");
+    if (cost != null && !(cost >= 0)) return toast("Maliyet bir sayı olmalı");
+    const item = {id: sel.value, qty, cost};
+    if (i >= 0) pf[i] = item; else pf.push(item);
+    savePf(); pfEdit = null; renderPage();
+  });
+  const cancel = button("btn sec", "Vazgeç", () => { pfEdit = null; renderPage(); });
+  const bs = el("div", "btns"); bs.append(save, cancel);
+  f.append(ls, lq, lc, bs);
+  if (i >= 0) f.append(button("btn danger", "Portföyden çıkar", () => { pf.splice(i, 1); savePf(); pfEdit = null; renderPage(); }));
+  return f;
+}
+async function loadPf(){
+  const ids = [...new Set(pf.map(x => x.id))].filter(id => assets[id] && avail(id));
+  await Promise.all(ids.map(id => Promise.all([current(id, "TRY").catch(() => null), periodReturn(id, "1G", "TRY").catch(() => null)])));
+  updatePortfolio();
+}
+function updatePortfolio(){
+  const totEl = $("#pftot"); if (state.tab !== "portfoy" || !totEl) return;
+  let tot = 0, day = 0, dayBase = 0, cost = 0, costVal = 0, missing = false;
+  const by = {};
+  pf.forEach((x, i) => {
+    const p = known[x.id], row = document.querySelector(`.hrow[data-i="${i}"]`);
+    if (p == null || !assets[x.id]){ missing = true; return; }
+    const v = x.qty*p; tot += v; by[x.id] = (by[x.id] || 0) + v;
+    const r = ref1G[x.id + "|TRY"]; if (r){ day += x.qty*(p - r); dayBase += x.qty*r; }
+    if (x.cost > 0){ cost += x.cost; costVal += v; }
+    if (row){
+      row.querySelector(".p").textContent = fmtPrice(v);
+      row.querySelector(".nm small").textContent = `${fmtQty(x.qty)} ${unitOf(x.id)} · ${fmtPrice(p)}`;
+      const pill = row.querySelector(".pill");
+      if (x.cost > 0){ const pl = (v/x.cost - 1)*100; pill.textContent = fmtPct(pl); pill.className = "pill num " + cls(pl); }
+      else { pill.textContent = "—"; pill.className = "pill num"; }
+    }
+  });
+  totEl.textContent = missing && !tot ? "…" : fmtPrice(tot);
+  const d = $("#pfday"), p = $("#pfpl");
+  if (dayBase){ d.textContent = `${fmtSigned(day)} (${fmtPct(day/dayBase*100)})`; d.className = "num " + cls(day); }
+  if (cost){ const pl = costVal - cost; p.textContent = `${fmtSigned(pl)} (${fmtPct((costVal/cost - 1)*100)})`; p.className = "num " + cls(pl); }
+  else { p.textContent = "Maliyet girilmedi"; p.className = "na"; }
+  const al = $("#pfalloc"), lg = $("#pflg");
+  const parts = Object.entries(by).sort((a, b) => b[1] - a[1]);
+  const key = parts.map(x => x[0] + Math.round(x[1]/tot*200)).join();
+  if (tot && al.dataset.key !== key){
+    al.dataset.key = key; al.innerHTML = ""; lg.innerHTML = "";
+    for (const [id, v] of parts){
+      const w = v/tot*100;
+      const s = el("i"); s.style.width = w + "%"; s.style.background = assets[id].color; al.append(s);
+      const t = el("span", null, `${label(id)} %${nf(w < 10 ? 1 : 0).format(w)}`); t.style.setProperty("--dc", assets[id].color); lg.append(t);
+    }
+  }
+}
+
+// ---------- fiyat alarmları ----------
+let alarms = lsJSON("alarms", []); // [{k, id, op:"gt"|"lt", price, on, hit}]
+let alForm = false;
+function saveAlarms(){ lsSet("alarms", JSON.stringify(alarms)); }
+async function addAlarm(id, price){
+  let cur = known[id];
+  if (cur == null){ const c = await current(id, "TRY").catch(() => null); cur = c && c[1]; }
+  if (cur == null){ toast("Bu varlığın fiyatı şu an alınamadı, biraz sonra dene"); return false; }
+  const op = price >= cur ? "gt" : "lt";
+  alarms.push({k: Date.now().toString(36), id, op, price, on: true});
+  saveAlarms(); askNotify(); refreshAlarmCard();
+  toast(`${label(id)} ${fmtPrice(price)} ${op === "gt" ? "üstüne çıkınca" : "altına inince"} haber vereceğim`);
+  return true;
+}
+function checkAlarms(){
+  let hit = false;
+  for (const a of alarms){
+    if (!a.on || !assets[a.id]) continue;
+    const v = known[a.id]; if (v == null) continue;
+    if ((a.op === "gt" && v >= a.price) || (a.op === "lt" && v <= a.price)){
+      a.on = false; a.hit = Date.now(); hit = true;
+      notify(`${label(a.id)}: ${fmtPrice(v)}`, `Alarm: ${fmtPrice(a.price)} ${a.op === "gt" ? "üstüne çıktı" : "altına indi"}.`, a.k);
+    }
+  }
+  if (hit){ saveAlarms(); refreshAlarmCard(); }
+}
+function askNotify(){ if ("Notification" in window && Notification.permission === "default") Notification.requestPermission().then(refreshAlarmCard).catch(() => {}); }
+async function notify(title, body, tag){
+  toast(`${title} — ${body}`, 9000);
+  try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch(e) {}
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  const opt = {body, tag, icon: "icons/icon-192.png", badge: "icons/icon-192.png"};
+  try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg){ await reg.showNotification(title, opt); return; } } catch(e) {}
+  try { new Notification(title, opt); } catch(e) {}
+}
+function alarmCard(){
+  const card = el("section", "card"); card.id = "alcard";
+  alarms.forEach((a, i) => {
+    if (!assets[a.id]) return;
+    const r = el("div", "alrow" + (a.on ? "" : " off"));
+    const nm = el("span", "nm");
+    nm.append(el("b", null, label(a.id)), el("small", null, `${a.op === "gt" ? "↑ Üstüne çıkarsa" : "↓ Altına inerse"}: ${fmtPrice(a.price)}${a.on ? "" : " · çaldı " + fmtTime(a.hit)}`));
+    const x = button("x", "✕", () => { alarms.splice(i, 1); saveAlarms(); refreshAlarmCard(); });
+    x.setAttribute("aria-label", "Alarmı sil");
+    r.append(icon(a.id), nm, x); card.append(r);
+  });
+  if (alForm){
+    const f = el("div", "form"); f.dataset.noswipe = "";
+    const ls = el("label", null, "Varlık"), sel = assetSelect("GRAM", true); ls.append(sel);
+    const [lp, inp] = field("Hedef fiyat ₺", "", "");
+    const hint = el("p", "hint", "");
+    const upd = async () => {
+      const id = sel.value; let v = known[id];
+      if (v == null){ hint.textContent = "Fiyat alınıyor…"; const c = await current(id, "TRY").catch(() => null); v = c && c[1]; }
+      if (sel.value !== id) return;
+      hint.textContent = v != null ? `Şu an ${fmtPrice(v)}. Hedef bunun üstündeyse yükselince, altındaysa düşünce haber verilir.` : "Fiyat şu an alınamadı.";
+    };
+    sel.onchange = upd; upd();
+    const bs = el("div", "btns");
+    bs.append(button("btn", "Alarm kur", async () => {
+      const p = parseNum(inp.value); if (!(p > 0)) return toast("Geçerli bir fiyat yaz");
+      alForm = false; if (!(await addAlarm(sel.value, p))) refreshAlarmCard();
+    }), button("btn sec", "Vazgeç", () => { alForm = false; refreshAlarmCard(); }));
+    f.append(ls, lp, hint, bs);
+    card.append(f);
+  } else card.append(addRow("Alarm ekle", () => { alForm = true; refreshAlarmCard(); }));
+  let msg = "Alarmlar uygulama açıkken kontrol edilir; telefon kilitliyken veya uygulama tamamen kapalıyken çalışmaz.";
+  if (!("Notification" in window)) msg += " Bu tarayıcı bildirim desteklemiyor; iPhone'da önce Ana Ekrana Ekle ile uygulama olarak kur.";
+  else if (Notification.permission === "denied") msg += " Bildirim izni kapalı; alarm sadece uygulama içinde görünür.";
+  const n = el("p", "empty", msg); n.style.fontSize = "13px"; n.style.borderTop = ".5px solid var(--sep)";
+  card.append(n);
+  if ("Notification" in window && Notification.permission === "default"){
+    const b = button("btn sec", "Bildirimlere izin ver", askNotify); b.style.cssText = "margin:0 16px 16px;width:calc(100% - 32px)";
+    card.append(b);
+  }
+  return card;
+}
+function refreshAlarmCard(){ const c = $("#alcard"); if (c) c.replaceWith(alarmCard()); }
+async function refreshKnown(){
+  const ids = new Set([...pf.map(x => x.id), ...alarms.filter(a => a.on).map(a => a.id)]);
+  await Promise.all([...ids].filter(id => assets[id] && avail(id) && livePrice(id, "TRY") == null).map(id => current(id, "TRY").catch(() => null)));
+  checkAlarms(); updatePortfolio();
+}
+setInterval(() => { if (!document.hidden) refreshKnown(); }, 60000);
+
+// ---------- fon ekleme / çıkarma (GitHub kaydı ile) ----------
+let fundForm = false;
+function issueUrl(title){
+  return `https://github.com/${REPO}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent("Bu kaydı olduğu gibi gönder. Fon listesi otomatik güncellenir ve kayıt kapanır.")}`;
+}
+function fundAdder(){
+  const wrap = el("div");
+  if (!fundForm){ wrap.append(addRow("Fon ekle", () => { fundForm = true; wrap.replaceWith(fundAdder()); })); return wrap; }
+  const f = el("div", "form"); f.dataset.noswipe = "";
+  const [l, inp] = field("TEFAS fon kodu", "", "Örn. TTE", "text");
+  inp.maxLength = 3; inp.autocapitalize = "characters"; inp.style.textTransform = "uppercase";
+  const hint = el("p", "hint", "GitHub açılır, oradaki yeşil Create düğmesine bas. Fon 5–10 dakika içinde burada görünür. GitHub'a giriş yapmış olman gerekir.");
+  const bs = el("div", "btns");
+  bs.append(button("btn", "GitHub'da ekle", () => {
+    const code = inp.value.trim().toUpperCase();
+    if (!/^[A-Z0-9]{3}$/.test(code)) return toast("Fon kodu 3 harf veya rakam olmalı");
+    if (DATA.funds[code]) return toast(code + " zaten listede");
+    window.open(issueUrl("fon-ekle: " + code), "_blank", "noopener");
+    fundForm = false; wrap.replaceWith(fundAdder());
+  }), button("btn sec", "Vazgeç", () => { fundForm = false; wrap.replaceWith(fundAdder()); }));
+  f.append(l, hint, bs);
+  wrap.append(f);
+  setTimeout(() => inp.focus(), 50);
+  return wrap;
+}
+
+// ---------- detay sayfası eylemleri ----------
+function renderSheetActions(){
+  const box = $("#sact"); box.innerHTML = "";
+  const id = state.sel, a = assets[id];
+  const sec = el("div", "sect", "Takip"); sec.style.margin = "0 4px 7px"; box.append(sec);
+  const card = el("div", "card");
+  const f = el("div", "form"); f.style.borderTop = "0";
+  const [l, inp] = field("Fiyat alarmı (₺)", "", known[id] ? nf(2).format(known[id]) : "Hedef fiyat");
+  f.append(l, button("btn", "Alarm kur", async () => {
+    const p = parseNum(inp.value); if (!(p > 0)) return toast("Geçerli bir fiyat yaz");
+    if (await addAlarm(id, p)) inp.value = "";
+  }));
+  if (!a.noPf) f.append(button("btn sec", "Portföyüme ekle", () => { closeSheet(); pfPreset = id; pfEdit = -1; if (state.tab === "portfoy") renderPage(); else goTab("portfoy"); }));
+  card.append(f); box.append(card);
+  if (a.kind === "fund") box.append(button("btn danger", "Bu fonu listeden çıkar", () => {
+    if (confirm(`${a.code} fonu listeden çıkarılsın mı? GitHub açılacak, oradaki Create düğmesine bas.`)) window.open(issueUrl("fon-sil: " + a.code), "_blank", "noopener");
+  }));
+}
+
+// ---------- ana ekran uygulaması / çevrimdışı ----------
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost"))
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 
 connect();
 renderPage();

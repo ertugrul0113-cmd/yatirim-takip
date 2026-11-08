@@ -12,10 +12,17 @@ Uygulama ücretsiz GitHub üzerinde çalışır. GitHub saatte bir döviz, altı
 7. iPhone'da bu adresi **Safari** ile aç → **Paylaş** düğmesi → **Ana Ekrana Ekle**. Artık uygulama gibi açılır.
 
 ## Fon eklemek / çıkarmak
-GitHub'da `fonlar.txt` dosyasını aç, kalem simgesine bas, her satıra bir fon kodu yaz, **Commit changes**. Bir sonraki saatlik güncellemede (veya Actions'tan elle çalıştırınca) uygulamada görünür.
+**Uygulamadan:** Fonlar sekmesinde **Fon ekle** → fon kodunu yaz → **GitHub'da ekle**. GitHub açılır, yeşil **Create** düğmesine bas. 5–10 dakika içinde fon uygulamada görünür ve GitHub'daki kayıt kendiliğinden kapanır. Çıkarmak için fonun detayında **Bu fonu listeden çıkar**. (GitHub'a giriş yapmış olman gerekir; başkalarının açtığı kayıtlar dikkate alınmaz.)
+
+**Elle:** GitHub'da `fonlar.txt` dosyasını aç, kalem simgesine bas, her satıra bir fon kodu yaz, **Commit changes**. Bir sonraki saatlik güncellemede uygulamada görünür.
+
+## Portföy ve fiyat alarmları
+**Portföyüm** sekmesinde elindeki varlıkları ve istersen toplam alış maliyetini gir; toplam değer, günlük değişim ve kâr/zarar canlı hesaplanır. Alarmlar uygulama açıkken çalışır. Bilgiler sadece o telefonun tarayıcısında saklanır.
 
 ## Veriler nereden geliyor
 - Bitcoin, Ethereum, ether.fi: Binance TL pariteleri, telefonda anlık.
-- Dolar/TL, Euro/TL, altın sertifikası (ALTINS1): Yahoo Finance, saatlik.
-- Gram altın: ons altın × dolar kuru ÷ 31,10.
+- Dolar/TL, Euro/TL: Yahoo Finance, saatlik (canlı fiyat Binance'ten türetilir).
+- Gram altın / gümüş: ons fiyatı × dolar kuru ÷ 31,10. Çeyrek altın: gram altın × 1,6035 (saf altın değeri).
+- BIST 100: Yahoo Finance, saatlik.
+- Enflasyon: TÜİK TÜFE aylık değişimleri (TCMB sayfasından), "Kim daha çok kazandırdı?" tablosundaki kesikli çizgi.
 - Fonlar: tefas.gov.tr, günlük.

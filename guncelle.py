@@ -70,15 +70,16 @@ def multiply(a, b):
 def fx_and_gold(old):
     assets = {}
     raw = {}
-    for key, tic in [("USD", "USDTRY=X"), ("EUR", "EURTRY=X"), ("ONS", "GC=F")]:
+    for key, tic in [("USD", "USDTRY=X"), ("EUR", "EURTRY=X"), ("ONS", "GC=F"), ("SLV", "SI=F"), ("XU100", "XU100.IS")]:
         raw[key] = {
             "h1": hourly_index(yclose(tic, "90d", "1h")),
             "d1": daily_index(yclose(tic, "6y", "1d")),
         }
     gram = {k: multiply(raw["ONS"][k], raw["USD"][k]) / ONS_GRAM for k in ("h1", "d1")}
-    names = {"USD": "Dolar / TL", "EUR": "Euro / TL", "GRAM": "Gram Altın"}
+    gumus = {k: multiply(raw["SLV"][k], raw["USD"][k]) / ONS_GRAM for k in ("h1", "d1")}
+    names = {"USD": "Dolar / TL", "EUR": "Euro / TL", "GRAM": "Gram Altın", "GUMUS": "Gram Gümüş", "XU100": "BIST 100"}
     for key in names:
-        src = gram if key == "GRAM" else raw[key]
+        src = gram if key == "GRAM" else gumus if key == "GUMUS" else raw[key]
         item = {"name": names[key], "h1": to_points(src["h1"]), "d1": to_points(src["d1"])}
         prev = old.get("assets", {}).get(key, {})
         for k in ("h1", "d1"):  # bu sefer çekilemediyse eski veriyi koru
@@ -86,6 +87,26 @@ def fx_and_gold(old):
                 item[k] = prev[k]
         assets[key] = item
     return assets
+
+
+CPI_URL = "https://www.tcmb.gov.tr/wps/wcm/connect/TR/TCMB+TR/Main+Menu/Istatistikler/Enflasyon+Verileri/Tuketici+Fiyatlari"
+
+
+def cpi(old):
+    """TÜFE aylık % değişim (TCMB tablosu, kaynak TÜİK). [["2026-10", 2.58], ...] eskiden yeniye."""
+    import re
+    import urllib.request
+    try:
+        req = urllib.request.Request(CPI_URL, headers={"User-Agent": "Mozilla/5.0 yatirim-takip"})
+        html = urllib.request.urlopen(req, timeout=40).read().decode("utf-8", "ignore")
+        rows = re.findall(r"<td[^>]*>\s*(\d{2})-(\d{4})\s*</td>\s*<td[^>]*>\s*[-\d.,]+\s*</td>\s*<td[^>]*>\s*([-\d.,]+)\s*</td>", html)
+        out = sorted({f"{y}-{m}": round(float(v.replace(",", ".")), 2) for m, y, v in rows}.items())
+        if len(out) > 24:
+            print("TÜFE", len(out), "ay, son:", out[-1])
+            return [list(x) for x in out]
+    except Exception as ex:  # noqa
+        print("TÜFE HATA", ex)
+    return old.get("cpi", [])
 
 
 def with_timeout(fn, seconds=60):
@@ -183,6 +204,7 @@ def main():
     data = {
         "updated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "assets": fx_and_gold(old),
+        "cpi": cpi(old),
         "funds": old.get("funds", {}),
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
