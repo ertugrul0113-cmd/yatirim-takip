@@ -1,0 +1,59 @@
+name: Fon ekle veya sil
+
+# Uygulamadaki "Fon ekle" / "Bu fonu listeden çıkar" düğmeleri
+# "fon-ekle: ABC" / "fon-sil: ABC" başlıklı bir GitHub kaydı (issue) açar.
+# Sadece depo sahibinin açtığı kayıtlar işlenir.
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: veri-guncelle
+  cancel-in-progress: false
+
+jobs:
+  fon:
+    if: >-
+      github.event.issue.user.login == github.repository_owner &&
+      (startsWith(github.event.issue.title, 'fon-ekle:') || startsWith(github.event.issue.title, 'fon-sil:'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TITLE: ${{ github.event.issue.title }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Listeyi düzenle
+        id: liste
+        run: python fon_yonet.py duzenle
+      - if: steps.liste.outputs.ok == 'true'
+        run: pip install yfinance tefas-crawler pandas numpy requests scikit-learn
+      - if: steps.liste.outputs.ok == 'true'
+        run: python guncelle.py
+      - if: steps.liste.outputs.ok == 'true'
+        run: python tahmin.py || echo "tahmin atlandi"
+      - name: Sonucu kontrol et
+        id: sonuc
+        if: steps.liste.outputs.ok == 'true'
+        run: python fon_yonet.py kontrol
+      - name: Kaydet
+        if: steps.liste.outputs.ok == 'true'
+        run: |
+          git config user.name "veri-bot"
+          git config user.email "veri-bot@users.noreply.github.com"
+          git add fonlar.txt data/
+          git commit -m "Fon listesi: $TITLE" || exit 0
+          git pull --rebase
+          git push
+      - name: Kaydı kapat
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MSG: ${{ steps.sonuc.outputs.msg || steps.liste.outputs.msg || 'İşlem tamamlanamadı, Actions kaydına bak.' }}
+        run: gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --comment "$MSG"
